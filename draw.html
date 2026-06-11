@@ -1271,8 +1271,6 @@
         document.querySelector('.app').classList.add('result-mode');
         const resultSection = document.getElementById('resultSection');
         resultSection.classList.add('visible');
-        window.scrollTo({ top: 0, behavior: 'instant' });
-
         // 당첨자 수 표시 업데이트
         document.getElementById('winnerDisplay').textContent = winners.length;
 
@@ -1309,8 +1307,7 @@
             grid.appendChild(rowEl);
         }
 
-        // 결과 화면으로 부드럽게 스크롤
-        resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        window.scrollTo({ top: 0, behavior: 'instant' });
     }
 
     /* ═══════════════════════════════════════════════════
