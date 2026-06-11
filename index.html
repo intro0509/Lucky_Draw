@@ -53,6 +53,8 @@
             height: 170px;
             width: auto;
             pointer-events: none;
+            animation: fadeIn 1.2s ease both;
+            animation-delay: .4s;
         }
 
         /* 레이어 1: 어두운 오버레이 */
@@ -132,8 +134,8 @@
         /* ── 장식 구분선 ── */
         .divider {
             display: flex; align-items: center; gap: 14px;
-            margin: 28px 0 24px;
-            animation: fadeUp .8s ease both;
+            margin: 30px 0 25px;
+            animation: fadeIn 1.2s ease both;
             animation-delay: .25s;
         }
 
@@ -217,6 +219,11 @@
             from { opacity: 0; transform: translateY(-16px); }
             to   { opacity: 1; transform: translateY(0); }
         }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
     </style>
 </head>
 <body>
@@ -236,7 +243,7 @@
 
     <h1 class="hero-title">LUCKY DRAW</h1>
 
-    <div class="divider" style="margin-bottom: 48px;"><span class="divider-gem">◆ ◇ ◆</span></div>
+    <div class="divider" style="margin-top: 25px; margin-bottom: 50px;"><span class="divider-gem">◆ ◇ ◆</span></div>
     <a class="enter-btn" href="draw.html" id="enterBtn">
         <span>✦&ensp; 추첨 시작하기 &ensp;✦</span>
     </a>
