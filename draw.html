@@ -238,7 +238,7 @@
 
         /* 패널 상단 소형 라벨 */
         .panel-label {
-            font-size: 10px; letter-spacing: 5px; text-transform: uppercase;
+            font-size: 12px; letter-spacing: 5px; text-transform: uppercase;
             color: var(--gold);
         }
 
@@ -438,7 +438,7 @@
         }
 
         .participants-label {
-            font-size: 10px; letter-spacing: 5px; text-transform: uppercase;
+            font-size: 12px; letter-spacing: 5px; text-transform: uppercase;
             color: var(--gold);
         }
 
@@ -446,7 +446,7 @@
             display: flex; align-items: center; gap: 12px;
         }
 
-        .participants-count { font-size: 11px; color: var(--gold); }
+        .participants-count { font-size: 12px; color: var(--gold); }
 
         /* 초기화 버튼 */
         .clear-btn {
@@ -454,7 +454,7 @@
             border: 1px solid var(--gold-line); border-radius: 2px;
             color: var(--gold);
             font-family: 'Pretendard', sans-serif;
-            font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+            font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
             padding: 4px 10px; cursor: pointer;
             transition: all .2s; outline: none;
         }
@@ -1080,7 +1080,7 @@
        숫자 카운터 업 애니메이션 — 0에서 target까지 duration ms 동안 올라감
        ease-out 커브(cubic) 적용으로 처음엔 빠르고 끝에서 느려짐
     ═══════════════════════════════════════════════════ */
-    function animateCount(el, target, duration = 750) {
+    function animateCount(el, target, duration = 1000) {
         const start = performance.now();
         (function tick(now) {
             const t    = Math.min((now - start) / duration, 1); // 0~1 진행률
