@@ -8,7 +8,7 @@
     <!-- 구글 폰트 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600;900&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
     <!-- Pretendard: 기본 UI 글꼴 -->
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
     <!-- SheetJS: 엑셀 파일 파싱 라이브러리 -->
@@ -95,7 +95,7 @@
             position: relative; z-index: 1;
             min-height: 100vh;
             display: flex; flex-direction: column; align-items: center;
-            padding: 52px 24px 88px; /* 상 | 좌우 | 하 */
+            padding: 130px 24px 88px; /* 상 | 좌우 | 하 */
         }
 
         /* ═══════════════════════════════════
@@ -106,6 +106,16 @@
             text-align: left;
             margin-bottom: 40px;
             width: 100%; max-width: 1200px;
+        }
+
+        .header-logo {
+            position: fixed;
+            top: 10px;
+            left: calc(50% - 370px);
+            z-index: 2;
+            height: 170px;
+            width: auto;
+            pointer-events: none;
         }
 
         /* "LUCKY DRAW" 대형 텍스트 — 그라디언트로 골드 색상 표현 */
@@ -121,7 +131,6 @@
             background-clip: text;
             /* 글로우·드롭섀도 효과 */
             filter: drop-shadow(0 0 28px rgba(212,175,55,.45)) drop-shadow(0 4px 12px rgba(0,0,0,.6));
-            margin-bottom: 16px;
         }
 
         /* 소형 상단 라벨 (영문 대문자, 넓은 자간) */
@@ -130,22 +139,38 @@
             color: var(--gold); opacity: .7; margin-bottom: 12px;
         }
 
+        /* 타이틀·부제 래퍼 */
+        .title-subtitle-wrap {
+            display: block;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
         /* 메인 타이틀 텍스트 */
         .hdr-title {
-            font-weight: 700;
-            font-size: clamp(26px, 4vw, 45px);
-            line-height: 1.3; letter-spacing: .06em; color: var(--text);
-            -webkit-text-stroke: 1.5px var(--text); /* 텍스트 외곽선으로 가독성 강화 */
-            text-shadow: 2px 2px 0 rgba(0,0,0,.45), 4px 4px 0 rgba(0,0,0,.25), 0 0 40px rgba(212,175,55,.18);
+            font-family: 'Noto Serif KR', serif;
+            font-weight: 900;
+            font-size: clamp(24px, 3.5vw, 36px);
+            letter-spacing: 0.15em;
+            line-height: 1.3;
+            background: linear-gradient(135deg, #3d1c25 0%, #c47a7a 45%, #b5716c 55%, #3d1c25 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 2px 8px rgba(180, 80, 80, 0.25));
+            margin-bottom: 10px;
         }
 
         /* 부제 */
         .hdr-subtitle {
-            font-weight: 300;
-            font-size: clamp(14px, 2vw, 18px);
-            letter-spacing: .25em;
-            color: var(--gold); opacity: .8;
-            margin-top: 10px;
+            font-family: 'Noto Serif KR', serif;
+            font-weight: 600;
+            font-size: clamp(16px, 2.5vw, 28px);
+            font-style: italic;
+            letter-spacing: 0.22em;
+            color: rgba(160, 100, 80, 0.85);
+            text-shadow: 0 1px 6px rgba(180, 80, 80, 0.15);
+            text-align: center;
         }
 
         /* 헤더 하단 장식선 (◆ ◇ ◆ 뒤에 골드 그라디언트 선) */
@@ -258,11 +283,15 @@
         .drop-zone:hover,
         .drop-zone.drag-over {
             border-color: var(--gold);
-            background: var(--gold-faint);
+            background: var(--gold);
         }
         .drop-zone-content { display: flex; align-items: center; gap: 7px; }
-        .drop-zone-icon { font-size: 18px; line-height: 1; color: var(--gold); opacity: .65; }
-        .drop-zone-main { font-size: 11px; color: var(--text); letter-spacing: .5px; }
+        .drop-zone-icon { font-size: 18px; line-height: 1; color: #f2ede4; opacity: .65; transition: color .25s; }
+        .drop-zone-main { font-size: 11px; color: #f2ede4; letter-spacing: .5px; transition: color .25s; }
+        .drop-zone:hover .drop-zone-icon,
+        .drop-zone.drag-over .drop-zone-icon,
+        .drop-zone:hover .drop-zone-main,
+        .drop-zone.drag-over .drop-zone-main { color: #0a0b0d; }
         .drop-zone-hint { font-size: 10px; color: rgba(242,237,228,.7); }
         .drop-zone .upload-status { margin-top: 5px; font-size: 11px; }
 
@@ -290,28 +319,19 @@
         .manual-input::placeholder { color: rgba(242,237,228,.5); font-size: 12px; }
         .manual-input:focus { border-color: rgba(212,175,55,.5); }
         .manual-add-btn {
-            position: relative;
             padding: 8px 12px;
             border: 1px solid var(--gold);
             border-radius: 2px;
-            color: var(--gold);
+            color: #f2ede4;
             background: transparent;
             font-family: 'Pretendard', sans-serif;
             font-size: 12px; font-weight: 500; letter-spacing: 2px;
             cursor: pointer;
-            overflow: hidden;
-            transition: color .35s;
+            transition: background .3s, color .3s;
             flex-shrink: 0;
             white-space: nowrap;
         }
-        .manual-add-btn::before {
-            content: ''; position: absolute; inset: 0;
-            background: var(--gold);
-            transform: scaleX(0); transform-origin: left center;
-            transition: transform .38s cubic-bezier(.22,1,.36,1);
-        }
-        .manual-add-btn:hover::before { transform: scaleX(1); }
-        .manual-add-btn:hover { color: #111317; }
+        .manual-add-btn:hover { background: var(--gold); color: #0a0b0d; }
         .manual-add-btn .btn-inner { position: relative; z-index: 1; }
 
         /* ── 당첨자 수 패널: − 버튼 / 숫자 입력 / + 버튼 한 줄 배치 ── */
@@ -341,21 +361,27 @@
             width: 38px; height: 38px; flex-shrink: 0;
             background: var(--gold-faint);
             border: 1px solid var(--gold-line); border-radius: 3px;
-            color: var(--gold); font-size: 20px; line-height: 1;
+            color: #f2ede4; font-size: 20px; line-height: 1;
             cursor: pointer; user-select: none; /* 더블클릭 시 텍스트 선택 방지 */
             transition: background .2s, border-color .2s;
         }
-        .step-btn:hover { background: rgba(212,175,55,.2); border-color: rgba(212,175,55,.45); }
+        .step-btn:hover { background: var(--gold); border-color: var(--gold); color: #0a0b0d; }
 
-        /* ── 추첨 시작 버튼 — 헤더 우측 상단 ── */
+        /* ── LUCKY DRAW 타이틀 + 추첨 시작 버튼 같은 행 ── */
+        .title-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
         .draw-fab {
-            position: absolute;
-            top: 0; right: 0;
+            flex-shrink: 0;
         }
 
         .cta-btn {
             position: relative;
-            background: rgba(10, 11, 15, 0.75);
+            background: transparent;
             border: 1px solid var(--gold);
             border-radius: 2px;
             color: var(--gold);
@@ -363,8 +389,8 @@
             font-size: 13px; letter-spacing: 4px; text-transform: uppercase;
             cursor: pointer; overflow: hidden; outline: none;
             transition: color .4s;
-            height: clamp(52px, 9vw, 104px);
-            padding: 0 24px;
+            height: clamp(52px, 9vw, 80px);
+            padding: 0 15px;
             display: flex; align-items: center;
             white-space: nowrap;
             box-shadow: 0 4px 20px rgba(0,0,0,.35);
@@ -378,7 +404,7 @@
         }
         .cta-btn:hover::before,
         .cta-btn:focus-visible::before { transform: scaleX(1); }
-        .cta-btn:hover, .cta-btn:focus-visible { color: #111317; }
+        .cta-btn:hover, .cta-btn:focus-visible { color: #0a0b0d; }
         .cta-btn .btn-text { position: relative; z-index: 1; }
 
         /* ═══════════════════════════════════
@@ -513,14 +539,47 @@
         .result-header { text-align: center; margin-bottom: 48px; animation: fadeUp .6s ease both; }
         .result-badge { font-size: 10px; letter-spacing: 7px; text-transform: uppercase; color: var(--gold-dim); margin-bottom: 10px; }
         .result-heading { font-size: clamp(26px, 3.5vw, 38px); font-weight: 400; color: rgba(50, 25, 35, 0.95); }
-        .result-heading .cnt { color: var(--gold); font-style: italic; } /* 당첨자 수 강조 */
+        .result-heading .cnt { color: var(--gold); font-style: italic; margin-right: 0.2em; } /* 당첨자 수 강조 */
         .flip-prompt { margin-top: 10px; font-size: 12px; color: var(--text-dim); letter-spacing: .5px; }
 
-        /* 카드 그리드: 1줄에 5개 고정 */
-        .cards-grid { display: grid; grid-template-columns: repeat(5, 175px); justify-content: center; gap: 20px; width: 100%; }
-        @media (max-width: 1000px) { .cards-grid { grid-template-columns: repeat(4, 175px); } }
-        @media (max-width: 800px)  { .cards-grid { grid-template-columns: repeat(3, 175px); } }
-        @media (max-width: 600px)  { .cards-grid { grid-template-columns: repeat(2, 175px); } }
+        /* 카드 그리드: 행 단위로 쌓이는 flex 레이아웃 */
+        .cards-grid { display: flex; flex-direction: column; align-items: center; gap: 28px; width: 100%; }
+        .card-row { display: flex; align-items: center; gap: 16px; }
+        .card-row-cards { display: flex; gap: 20px; flex-wrap: wrap; justify-content: flex-start; }
+
+        /* 행 공개 버튼 */
+        .row-reveal-btn {
+            width: 34px; height: 265px; flex-shrink: 0;
+            background: transparent;
+            border: 1px solid var(--gold-line);
+            border-radius: 2px;
+            cursor: pointer; outline: none;
+            display: flex; align-items: center; justify-content: center;
+            animation: fadeUp .6s ease both;
+            transition: background .3s;
+        }
+        .row-reveal-btn:hover { background: var(--gold); }
+        .row-reveal-btn:hover .row-btn-num,
+        .row-reveal-btn:hover .row-btn-label { color: #0a0b0d; }
+        .row-reveal-btn:hover .row-btn-sep { background: rgba(17,19,23,.35); }
+
+        .row-btn-inner {
+            position: relative; z-index: 1;
+            display: flex; flex-direction: column; align-items: center; gap: 7px;
+            pointer-events: none;
+        }
+        .row-btn-num {
+            font-size: 12px; font-weight: 600;
+            color: var(--gold); letter-spacing: 1px;
+            transition: color .35s;
+        }
+        .row-btn-sep { width: 14px; height: 1px; background: rgba(212,175,55,.3); transition: background .35s; }
+        .row-btn-label {
+            font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase;
+            color: var(--gold);
+            font-family: 'Pretendard', sans-serif;
+            transition: color .35s;
+        }
 
         /* 각 카드가 순서대로 위에서 튀어오르며 등장 (--stagger: JS에서 딜레이 설정) */
         .card-wrapper { animation: cardIn .65s cubic-bezier(.34,1.38,.64,1) both; animation-delay: var(--stagger, 0s); }
@@ -621,15 +680,15 @@
         .action-btn {
             padding: 13px 40px; background: transparent;
             border: 1px solid rgba(212,175,55,.35); border-radius: 2px;
-            color: var(--gold-dim);
+            color: var(--gold);
             font-family: 'Pretendard', sans-serif;
             font-size: 12px; letter-spacing: 3.5px; text-transform: uppercase;
             cursor: pointer; outline: none; transition: all .3s;
         }
-        .action-btn:hover, .action-btn:focus-visible { background: var(--gold-faint); border-color: var(--gold); color: var(--gold); }
+        .action-btn:hover, .action-btn:focus-visible { background: var(--gold); border-color: var(--gold); color: #0a0b0d; }
         /* primary 버튼 (모두 공개): 기본부터 골드 틴트 */
-        .action-btn.primary { background: var(--gold-faint); border-color: rgba(212,175,55,.5); color: var(--gold); }
-        .action-btn.primary:hover, .action-btn.primary:focus-visible { background: var(--gold); color: #111317; }
+        .action-btn.primary { background: transparent; border-color: rgba(212,175,55,.5); color: var(--gold); }
+        .action-btn.primary:hover, .action-btn.primary:focus-visible { background: var(--gold); color: #0a0b0d; }
     </style>
 </head>
 <body>
@@ -638,16 +697,19 @@
 
     <!-- ═══ HEADER ═══ -->
     <header class="site-header">
-        <!-- 추첨 시작 버튼 — 헤더 우측 상단 -->
-        <div class="draw-fab">
-            <button class="cta-btn" id="drawBtn">
-                <span class="btn-text">✦&ensp; 추첨 시작 &ensp;✦</span>
-            </button>
+        <img src="80thanniversary.png" alt="80th Anniversary Dong-A University" class="header-logo">
+        <div class="title-subtitle-wrap">
+            <h1 class="hdr-title">함께 이룬 성과, 함께 여는 미래</h1>
+            <p class="hdr-subtitle">- 교직원을 위한 감사 콘서트 -</p>
         </div>
-        <p class="lucky-draw-title">LUCKY DRAW</p>
-        <p class="hdr-eyebrow">Luxury Event Experience</p>
-        <h1 class="hdr-title">함께 이룬 성과, 함께 여는 미래</h1>
-        <p class="hdr-subtitle">교직원을 위한 감사 콘서트</p>
+        <div class="title-row">
+            <p class="lucky-draw-title">LUCKY DRAW</p>
+            <div class="draw-fab">
+                <button class="cta-btn" id="drawBtn">
+                    <span class="btn-text">✦&ensp;추첨 시작&ensp;✦</span>
+                </button>
+            </div>
+        </div>
         <div class="ornament"><span class="ornament-gem">◆ ◇ ◆</span></div>
     </header>
 
@@ -697,7 +759,7 @@
         <!-- 참여자 명부: 5열 그리드, 파일 로드 후 자동 업데이트 -->
         <div class="participants-section">
             <div class="participants-header">
-                <p class="participants-label">참여자 명부</p>
+                <p class="participants-label">참여자 리스트</p>
                 <div class="participants-meta-right">
                     <span class="participants-count" id="tableCount">0명</span>
                     <button class="clear-btn" id="clearBtn">초기화</button>
@@ -1097,10 +1159,38 @@
         // 당첨자 수 표시 업데이트
         document.getElementById('winnerDisplay').textContent = winners.length;
 
-        // 카드 생성 및 그리드에 추가
+        // 카드 생성 — 5개씩 행으로 묶어 생성, 각 행 좌측에 공개 버튼 추가
         const grid = document.getElementById('cardsGrid');
         grid.innerHTML = '';
-        winners.forEach((winner, i) => grid.appendChild(createCard(winner, i)));
+        const CARDS_PER_ROW = 5;
+        for (let r = 0; r < Math.ceil(winners.length / CARDS_PER_ROW); r++) {
+            const rowWinners = winners.slice(r * CARDS_PER_ROW, (r + 1) * CARDS_PER_ROW);
+            const rowEl = document.createElement('div');
+            rowEl.className = 'card-row';
+
+            const btn = document.createElement('button');
+            btn.className = 'row-reveal-btn';
+            btn.setAttribute('aria-label', `${r + 1}번째 줄 카드 공개`);
+            btn.style.animationDelay = `${Math.min(r * CARDS_PER_ROW * 0.11, 2.5)}s`;
+            btn.innerHTML =
+                `<span class="row-btn-inner">`
+                + `<span class="row-btn-num">${String(r + 1).padStart(2, '0')}</span>`
+                + `<span class="row-btn-sep"></span>`
+                + `<span class="row-btn-label">공개</span>`
+                + `</span>`;
+            btn.addEventListener('click', () => {
+                rowEl.querySelectorAll('.card-inner:not(.is-flipped)')
+                    .forEach((inner, i) => setTimeout(() => inner.classList.add('is-flipped'), i * 160));
+            });
+            rowEl.appendChild(btn);
+
+            const cardsWrap = document.createElement('div');
+            cardsWrap.className = 'card-row-cards';
+            rowWinners.forEach((w, i) => cardsWrap.appendChild(createCard(w, r * CARDS_PER_ROW + i)));
+            rowEl.appendChild(cardsWrap);
+
+            grid.appendChild(rowEl);
+        }
 
         // 결과 화면으로 부드럽게 스크롤
         resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1124,7 +1214,7 @@
         document.getElementById('resultSection').classList.remove('visible');
         document.getElementById('cardsGrid').innerHTML = '';
         renderParticipantTable(); // 명부 테이블 다시 그리기
-        document.getElementById('setupSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     /* ═══════════════════════════════════════════════════

@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600;900&display=swap" rel="stylesheet">
 
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -87,7 +87,7 @@
         }
         .pre-eyebrow p:first-child {
             font-family: 'Noto Serif KR', serif;
-            font-size: 36px; font-weight: 900;
+            font-size: clamp(24px, 3.5vw, 36px); font-weight: 900;
             letter-spacing: 0.15em;
             background: linear-gradient(135deg, #3d1c25 0%, #c47a7a 45%, #b5716c 55%, #3d1c25 100%);
             -webkit-background-clip: text;
@@ -98,7 +98,7 @@
         }
         .pre-eyebrow p:last-child {
             font-family: 'Noto Serif KR', serif;
-            font-size: 28px; font-weight: 600;
+            font-size: clamp(16px, 2.5vw, 28px); font-weight: 600;
             font-style: italic;
             letter-spacing: 0.22em;
             color: rgba(160, 100, 80, 0.85);
@@ -215,7 +215,7 @@
 
         @keyframes fadeDown {
             from { opacity: 0; transform: translateY(-16px); }
-            to   { opacity: .7; transform: translateY(0); }
+            to   { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
