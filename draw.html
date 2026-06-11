@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dong-A LUCKY DRAW</title>
+
+    <!-- 구글 폰트 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <!-- Pretendard: 기본 UI 글꼴 -->
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
+    <!-- SheetJS: 엑셀 파일 파싱 라이브러리 -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+
+    <style>
+        /* ── 페이지 진입 밝기 변화 ── */
+        .wipe-panel {
+            position: fixed; inset: 0; z-index: 999;
+            background: #fff;
+            opacity: 1;
+            pointer-events: none;
+            transition: opacity .6s ease;
+        }
+        .wipe-panel.leave {
+            opacity: 0;
+        }
+
+        /* ── 전역 초기화: 모든 요소의 박스 사이징·여백 통일 ── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { overflow-x: hidden; }
+
+        /* ── CSS 변수 (디자인 토큰) ── */
+        :root {
+            /* 배경 색상 */
+            --bg:         #111317;              /* 페이지 기본 배경 (매우 어두운 회색) */
+            --bg2:        #1a1c23;              /* 패널 배경 */
+
+            /* 골드 팔레트 */
+            --gold:       #d4af37;              /* 기본 골드 */
+            --gold-lt:    #f0d878;              /* 밝은 골드 (그라디언트 하이라이트) */
+            --gold-dim:   #9a7e28;              /* 어두운 골드 (보조 텍스트·아이콘) */
+            --gold-faint: rgba(212,175,55,.1);  /* 극히 연한 골드 (버튼 배경 틴트) */
+            --gold-line:  rgba(212,175,55,.22); /* 반투명 골드 (테두리) */
+
+            /* 텍스트 색상 */
+            --text:       #f2ede4;  /* 기본 텍스트 (따뜻한 흰색) */
+            --text-dim:   #8a8070;  /* 보조 텍스트 (회색) */
+
+            /* 공통 */
+            --r:          6px;                  /* 기본 border-radius */
+            --bg-image:   url('background2.jpg'); /* 배경 이미지 — 파일명 변경 가능 */
+        }
+
+        html { scroll-behavior: smooth; } /* 페이지 내 앵커 이동 시 부드럽게 스크롤 */
+
+        /* ── 배경 레이어 구조 ──
+           레이어 0 (body)    : 배경 이미지
+           레이어 1 (::before): 화이트 반투명 오버레이 — 이미지를 밝게 처리
+           레이어 2 (::after) : 골드 방사형 빛 — 코너에 미묘한 황금빛 분위기 연출
+           레이어 3 (.app)    : 실제 콘텐츠 (z-index: 1)
+        ── */
+        body {
+            min-height: 100vh;
+            background-color: var(--bg);          /* 이미지 로딩 전 폴백 색상 */
+            background-image: var(--bg-image);
+            background-size: cover;
+            background-position: center center;
+            background-attachment: fixed;         /* 스크롤해도 배경이 고정 */
+            color: var(--text);
+            font-family: 'Pretendard', sans-serif;
+            /* overflow-x: hidden은 html로 이동 — body에 두면 fixed 포지셔닝이 깨짐 */
+        }
+
+        /* 레이어 1: 화이트 오버레이 (배경 이미지 위에 씌워 밝게 만듦) */
+        body::before {
+            content: ''; position: fixed; inset: 0;
+            background: rgba(255,255,255,.6);
+            pointer-events: none; z-index: 0;
+        }
+
+        /* 레이어 2: 골드 방사형 빛 (좌상단·우하단 코너에 은은한 황금빛) */
+        body::after {
+            content: ''; position: fixed; inset: 0;
+            background:
+                radial-gradient(ellipse 80% 55% at 15% 8%,  rgba(212,175,55,.06) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 45% at 85% 92%, rgba(212,175,55,.05) 0%, transparent 60%);
+            pointer-events: none; z-index: 0;
+        }
+
+        /* 레이어 3: 실제 콘텐츠 래퍼 — body 오버레이 위에 위치 */
+        .app {
+            position: relative; z-index: 1;
+            min-height: 100vh;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 52px 24px 88px; /* 상 | 좌우 | 하 */
+        }
+
+        /* ═══════════════════════════════════
+           HEADER: 상단 타이틀·부제 영역
+        ═══════════════════════════════════ */
+        .site-header {
+            position: relative;
+            text-align: left;
+            margin-bottom: 40px;
+            width: 100%; max-width: 1200px;
+        }
+
+        /* "LUCKY DRAW" 대형 텍스트 — 그라디언트로 골드 색상 표현 */
+        .lucky-draw-title {
+            font-family: 'Bodoni MT', 'Bodoni 72', 'Didot', serif;
+            font-weight: 900;
+            font-size: clamp(52px, 9vw, 104px); /* 화면 너비에 따라 52~104px 자동 조정 */
+            letter-spacing: 0.18em; line-height: 1;
+            /* 텍스트에 그라디언트 적용: background를 클리핑해 글자 색으로 사용 */
+            background: linear-gradient(135deg, var(--gold-dim) 0%, var(--gold-lt) 45%, var(--gold) 55%, var(--gold-dim) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            /* 글로우·드롭섀도 효과 */
+            filter: drop-shadow(0 0 28px rgba(212,175,55,.45)) drop-shadow(0 4px 12px rgba(0,0,0,.6));
+            margin-bottom: 16px;
+        }
+
+        /* 소형 상단 라벨 (영문 대문자, 넓은 자간) */
+        .hdr-eyebrow {
+            font-size: 10px; letter-spacing: 8px; text-transform: uppercase;
+            color: var(--gold); opacity: .7; margin-bottom: 12px;
+        }
+
+        /* 메인 타이틀 텍스트 */
+        .hdr-title {
+            font-weight: 700;
+            font-size: clamp(26px, 4vw, 45px);
+            line-height: 1.3; letter-spacing: .06em; color: var(--text);
+            -webkit-text-stroke: 1.5px var(--text); /* 텍스트 외곽선으로 가독성 강화 */
+            text-shadow: 2px 2px 0 rgba(0,0,0,.45), 4px 4px 0 rgba(0,0,0,.25), 0 0 40px rgba(212,175,55,.18);
+        }
+
+        /* 부제 */
+        .hdr-subtitle {
+            font-weight: 300;
+            font-size: clamp(14px, 2vw, 18px);
+            letter-spacing: .25em;
+            color: var(--gold); opacity: .8;
+            margin-top: 10px;
+        }
+
+        /* 헤더 하단 장식선 (◆ ◇ ◆ 뒤에 골드 그라디언트 선) */
+        .ornament {
+            display: flex; align-items: center; justify-content: flex-start;
+            gap: 10px; margin-top: 16px;
+        }
+        .ornament::before { display: none; }
+        .ornament::after  { content: ''; width: 100px; height: 1px; background: linear-gradient(90deg, rgba(212,175,55,.4), transparent); }
+        .ornament-gem { font-size: 9px; color: var(--gold); opacity: .55; letter-spacing: 3px; }
+
+        /* ═══════════════════════════════════
+           SETUP SECTION: 참여자 등록·추첨 설정
+        ═══════════════════════════════════ */
+        .setup-section {
+            width: 100%; max-width: 1200px;
+            animation: fadeUp .7s ease both; /* 페이지 진입 시 아래에서 위로 페이드인 */
+        }
+
+        /* 페이드업 애니메이션 — 아래에서 위로 올라오며 나타남 */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── 컨트롤 바: 4개 패널을 가로로 동일 너비 배치 ── */
+        .controls-bar {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr)); /* 3등분 — 콘텐츠 너비 무시하고 균등 분할 */
+            gap: 16px;
+            margin-bottom: 20px;
+            align-items: stretch; /* 가장 높은 패널에 맞춰 나머지도 동일 높이 */
+        }
+
+        /* 반응형: 화면 너비에 따라 열 수 축소 */
+        @media (max-width: 720px) { .controls-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 480px) { .controls-bar { grid-template-columns: minmax(0, 1fr); } }
+
+        /* ── 패널 공통 스타일 ── */
+        .panel {
+            background: rgba(10, 11, 15, 0.55);
+            border: 1px solid var(--gold);
+            border-radius: 2px;
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            gap: 10px;
+        }
+
+        /* 패널 상단 소형 라벨 */
+        .panel-label {
+            font-size: 10px; letter-spacing: 5px; text-transform: uppercase;
+            color: var(--gold);
+        }
+
+        /* ── 참여자 등록 패널: 업로드 버튼 + 상태 텍스트 한 줄 배치 ── */
+        .upload-row {
+            display: flex; align-items: center; gap: 14px;
+        }
+
+        /* 엑셀 업로드 버튼 (<label> 요소 — file input과 연결됨) */
+        .upload-btn {
+            position: relative;
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 9px 18px;
+            border: 1px solid var(--gold);
+            border-radius: 2px;
+            color: var(--gold);
+            font-family: 'Pretendard', sans-serif;
+            font-size: 12px; font-weight: 500; letter-spacing: 2.5px;
+            cursor: pointer; white-space: nowrap;
+            overflow: hidden;          /* ::before 슬라이드가 버튼 밖으로 넘치지 않도록 */
+            transition: color .35s;
+            flex-shrink: 0;            /* 상태 텍스트가 길어도 버튼 너비 유지 */
+        }
+
+        /* 호버 시 왼쪽에서 오른쪽으로 골드 배경이 밀려오는 효과 */
+        .upload-btn::before {
+            content: ''; position: absolute; inset: 0;
+            background: var(--gold);
+            transform: scaleX(0); transform-origin: left center; /* 초기: 폭 0, 왼쪽 기준 */
+            transition: transform .38s cubic-bezier(.22,1,.36,1);
+        }
+        .upload-btn:hover::before { transform: scaleX(1); } /* 호버: 폭 100%로 확장 */
+        .upload-btn:hover { color: #111317; }               /* 배경이 골드로 바뀌면 텍스트는 어둡게 */
+        .upload-btn span { position: relative; z-index: 1; } /* 텍스트가 ::before 위에 표시 */
+
+        /* 파일 로드 상태 텍스트 ("파일을 선택해 주세요" / "n명 로드됨") */
+        .upload-status {
+            font-size: 12.5px; color: var(--text);
+            letter-spacing: .3px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        /* 파일 로드 완료 시 골드 색상으로 강조 */
+        .upload-status.loaded { color: var(--gold); }
+
+        /* ── 드래그앤드롭 존 ── */
+        .drop-zone {
+            border: 1px dashed var(--gold);
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: border-color .25s, background .25s;
+            padding: 8px 12px;
+            user-select: none;
+        }
+        .drop-zone:hover,
+        .drop-zone.drag-over {
+            border-color: var(--gold);
+            background: var(--gold-faint);
+        }
+        .drop-zone-content { display: flex; align-items: center; gap: 7px; }
+        .drop-zone-icon { font-size: 18px; line-height: 1; color: var(--gold); opacity: .65; }
+        .drop-zone-main { font-size: 11px; color: var(--text); letter-spacing: .5px; }
+        .drop-zone-hint { font-size: 10px; color: rgba(242,237,228,.7); }
+        .drop-zone .upload-status { margin-top: 5px; font-size: 11px; }
+
+        /* ── 직접 입력 폼 ── */
+        .manual-form {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+        }
+        .manual-input {
+            background: rgba(0,0,0,.25);
+            border: 1px solid var(--gold-line);
+            border-radius: 4px;
+            color: var(--text);
+            font-family: 'Pretendard', sans-serif;
+            font-size: 13px;
+            padding: 8px 10px;
+            outline: none;
+            transition: border-color .3s;
+            flex: 1;
+            min-width: 0;
+        }
+        .manual-input::placeholder { color: rgba(242,237,228,.5); font-size: 12px; }
+        .manual-input:focus { border-color: rgba(212,175,55,.5); }
+        .manual-add-btn {
+            position: relative;
+            padding: 8px 12px;
+            border: 1px solid var(--gold);
+            border-radius: 2px;
+            color: var(--gold);
+            background: transparent;
+            font-family: 'Pretendard', sans-serif;
+            font-size: 12px; font-weight: 500; letter-spacing: 2px;
+            cursor: pointer;
+            overflow: hidden;
+            transition: color .35s;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+        .manual-add-btn::before {
+            content: ''; position: absolute; inset: 0;
+            background: var(--gold);
+            transform: scaleX(0); transform-origin: left center;
+            transition: transform .38s cubic-bezier(.22,1,.36,1);
+        }
+        .manual-add-btn:hover::before { transform: scaleX(1); }
+        .manual-add-btn:hover { color: #111317; }
+        .manual-add-btn .btn-inner { position: relative; z-index: 1; }
+
+        /* ── 당첨자 수 패널: − 버튼 / 숫자 입력 / + 버튼 한 줄 배치 ── */
+        .winner-row {
+            display: flex; align-items: center; gap: 8px; width: 100%;
+        }
+
+        /* 당첨자 수 숫자 입력 필드 */
+        .winner-input {
+            flex: 1; min-width: 0;
+            background: rgba(0,0,0,.25);
+            border: 1px solid var(--gold-line); border-radius: 4px;
+            color: var(--text);
+            font-family: 'Pretendard', sans-serif;
+            font-size: 28px; font-weight: 400; text-align: center;
+            padding: 4px 8px; outline: none;
+            transition: border-color .3s;
+            /* 브라우저 기본 숫자 스피너(화살표) 제거 */
+            -moz-appearance: textfield; appearance: textfield;
+        }
+        .winner-input::-webkit-inner-spin-button,
+        .winner-input::-webkit-outer-spin-button { -webkit-appearance: none; appearance: none; }
+        .winner-input:focus { border-color: rgba(212,175,55,.5); }
+
+        /* ± 스텝 버튼 (정사각형) */
+        .step-btn {
+            width: 38px; height: 38px; flex-shrink: 0;
+            background: var(--gold-faint);
+            border: 1px solid var(--gold-line); border-radius: 3px;
+            color: var(--gold); font-size: 20px; line-height: 1;
+            cursor: pointer; user-select: none; /* 더블클릭 시 텍스트 선택 방지 */
+            transition: background .2s, border-color .2s;
+        }
+        .step-btn:hover { background: rgba(212,175,55,.2); border-color: rgba(212,175,55,.45); }
+
+        /* ── 추첨 시작 버튼 — 헤더 우측 상단 ── */
+        .draw-fab {
+            position: absolute;
+            top: 0; right: 0;
+        }
+
+        .cta-btn {
+            position: relative;
+            background: rgba(10, 11, 15, 0.75);
+            border: 1px solid var(--gold);
+            border-radius: 2px;
+            color: var(--gold);
+            font-family: 'Pretendard', sans-serif;
+            font-size: 13px; letter-spacing: 4px; text-transform: uppercase;
+            cursor: pointer; overflow: hidden; outline: none;
+            transition: color .4s;
+            height: clamp(52px, 9vw, 104px);
+            padding: 0 24px;
+            display: flex; align-items: center;
+            white-space: nowrap;
+            box-shadow: 0 4px 20px rgba(0,0,0,.35);
+        }
+
+        .cta-btn::before {
+            content: ''; position: absolute; inset: 0;
+            background: var(--gold);
+            transform: scaleX(0); transform-origin: left center;
+            transition: transform .45s cubic-bezier(.22,1,.36,1);
+        }
+        .cta-btn:hover::before,
+        .cta-btn:focus-visible::before { transform: scaleX(1); }
+        .cta-btn:hover, .cta-btn:focus-visible { color: #111317; }
+        .cta-btn .btn-text { position: relative; z-index: 1; }
+
+        /* ═══════════════════════════════════
+           참여자 명부: 5열 그리드 테이블
+        ═══════════════════════════════════ */
+        .participants-section {
+            width: 100%;
+            animation: fadeUp .7s ease both;
+            animation-delay: .15s; /* 컨트롤 바보다 약간 늦게 등장 */
+        }
+
+        /* 명부 상단: "참여자 명부" 라벨 + 인원수 + 초기화 버튼 */
+        .participants-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .participants-label {
+            font-size: 10px; letter-spacing: 5px; text-transform: uppercase;
+            color: var(--gold);
+        }
+
+        .participants-meta-right {
+            display: flex; align-items: center; gap: 12px;
+        }
+
+        .participants-count { font-size: 11px; color: var(--gold); }
+
+        /* 초기화 버튼 */
+        .clear-btn {
+            background: none;
+            border: 1px solid var(--gold-line); border-radius: 2px;
+            color: var(--gold);
+            font-family: 'Pretendard', sans-serif;
+            font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+            padding: 4px 10px; cursor: pointer;
+            transition: all .2s; outline: none;
+        }
+        .clear-btn:hover {
+            background: var(--gold-faint);
+            border-color: rgba(212,175,55,.4); color: var(--gold);
+        }
+
+        /* 5열 그리드: 각 셀 사이를 골드 선으로 구분 */
+        .participants-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            border: 1px solid var(--gold);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        /* 반응형: 화면 너비에 따라 열 수 축소 */
+        @media (max-width: 900px)  { .participants-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 540px)  { .participants-grid { grid-template-columns: repeat(2, 1fr); } }
+
+        /* 개별 참여자 셀 */
+        .participant-cell {
+            padding: 11px 14px;
+            background: rgba(10, 11, 15, 0.5);
+            border-right: 1px solid rgba(212,175,55,.3);
+            border-bottom: 1px solid rgba(212,175,55,.3);
+            position: relative; /* 삭제 버튼(pc-del) 절대 위치 기준 */
+            transition: background .18s;
+            min-height: 44px;
+        }
+
+        /* 홀수 행 (6~10번, 16~20번, ... 셀)은 살짝 밝은 배경으로 행 구분 */
+        .participant-cell:nth-child(14n+8),
+        .participant-cell:nth-child(14n+9),
+        .participant-cell:nth-child(14n+10),
+        .participant-cell:nth-child(14n+11),
+        .participant-cell:nth-child(14n+12),
+        .participant-cell:nth-child(14n+13),
+        .participant-cell:nth-child(14n) {
+            background: rgba(20, 22, 30, 0.55);
+        }
+
+        .participant-cell:hover { background: rgba(20, 22, 30, 0.92); }
+        .participant-cell:hover .pc-no   { color: var(--gold); opacity: .9; }
+        .participant-cell:hover .pc-info { color: #fff; }
+        .participant-cell:hover .pc-sep  { opacity: .8; }
+        .participant-cell:nth-child(7n) { border-right: none; }       /* 각 행 마지막 셀: 오른쪽 테두리 제거 */
+
+        /* 셀 내부 요소 */
+        .pc-no   { font-size: 9px; color: var(--gold); letter-spacing: 1.5px; margin-bottom: 4px; opacity: .85; }
+        .pc-info { font-size: 12px; font-weight: 500; color: var(--text); line-height: 1.4; word-break: keep-all; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pc-sep  { color: var(--gold); opacity: .7; margin: 0 4px; }
+
+        /* 삭제 버튼 — 기본 숨김, 셀 호버 시 우측 상단에 표시 */
+        .pc-del {
+            position: absolute; top: 7px; right: 8px;
+            background: none; border: none;
+            color: rgba(212,175,55,.2); font-size: 14px; line-height: 1;
+            cursor: pointer; opacity: 0; /* 기본 숨김 */
+            transition: opacity .15s, color .15s; padding: 2px;
+        }
+        .participant-cell:hover .pc-del { opacity: 1; }          /* 셀 호버 시 삭제 버튼 표시 */
+        .pc-del:hover { color: rgba(212,175,55,.75); }            /* 삭제 버튼 호버 시 강조 */
+
+        /* 참여자 없을 때 빈 상태 메시지 — 그리드 전체 열 병합 */
+        .participants-empty {
+            grid-column: 1 / -1; /* 첫 열~마지막 열 전체 차지 */
+            padding: 52px 24px;
+            text-align: center;
+            font-size: 13px; color: var(--text-dim); letter-spacing: 1px;
+        }
+
+        /* ── 골드 파티클: 파일 로드 완료 시 숫자 주변에 튀는 반짝이 효과 ── */
+        .spark-particle {
+            position: fixed; border-radius: 50%; background: var(--gold);
+            pointer-events: none; z-index: 9999;
+            animation: sparkFly 0.8s ease-out both;
+            animation-delay: var(--delay, 0s); /* JS에서 각 파티클마다 개별 딜레이 적용 */
+        }
+        /* 파티클이 퍼져나가며 사라지는 애니메이션 (--dx, --dy는 JS에서 설정) */
+        @keyframes sparkFly {
+            0%   { transform: translate(0,0) scale(1.3); opacity: 1; }
+            100% { transform: translate(var(--dx),var(--dy)) scale(0); opacity: 0; }
+        }
+
+        /* ═══════════════════════════════════
+           RESULT SECTION: 추첨 결과 카드 화면
+        ═══════════════════════════════════ */
+        /* 기본 숨김 → .visible 추가 시 표시 */
+        .result-section {
+            display: none; width: 100%; max-width: 1160px;
+            flex-direction: column; align-items: center;
+        }
+        .result-section.visible { display: flex; }
+
+        /* 결과 헤더 */
+        .result-header { text-align: center; margin-bottom: 48px; animation: fadeUp .6s ease both; }
+        .result-badge { font-size: 10px; letter-spacing: 7px; text-transform: uppercase; color: var(--gold-dim); margin-bottom: 10px; }
+        .result-heading { font-size: clamp(26px, 3.5vw, 38px); font-weight: 400; color: rgba(50, 25, 35, 0.95); }
+        .result-heading .cnt { color: var(--gold); font-style: italic; } /* 당첨자 수 강조 */
+        .flip-prompt { margin-top: 10px; font-size: 12px; color: var(--text-dim); letter-spacing: .5px; }
+
+        /* 카드 그리드: 1줄에 5개 고정 */
+        .cards-grid { display: grid; grid-template-columns: repeat(5, 175px); justify-content: center; gap: 20px; width: 100%; }
+        @media (max-width: 1000px) { .cards-grid { grid-template-columns: repeat(4, 175px); } }
+        @media (max-width: 800px)  { .cards-grid { grid-template-columns: repeat(3, 175px); } }
+        @media (max-width: 600px)  { .cards-grid { grid-template-columns: repeat(2, 175px); } }
+
+        /* 각 카드가 순서대로 위에서 튀어오르며 등장 (--stagger: JS에서 딜레이 설정) */
+        .card-wrapper { animation: cardIn .65s cubic-bezier(.34,1.38,.64,1) both; animation-delay: var(--stagger, 0s); }
+
+        @keyframes cardIn {
+            0%   { opacity: 0; transform: translateY(56px) scale(.85) rotate(-2deg); }
+            100% { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
+        }
+
+        /* ── 카드 3D 뒤집기 구조 ──
+           .card-scene  : 원근감(perspective) 컨테이너
+           .card-inner  : 실제 회전하는 요소 (transform-style: preserve-3d)
+           .card-back   : 초기에 보이는 뒷면
+           .card-front  : rotateY(180deg)로 뒤집혀 있다가 클릭 시 앞면으로 등장
+        ── */
+        .card-scene { width: 175px; height: 265px; perspective: 1100px; cursor: pointer; }
+
+        .card-inner {
+            width: 100%; height: 100%; position: relative;
+            transform-style: preserve-3d;               /* 자식 요소의 3D 변환 유지 */
+            transition: transform .9s cubic-bezier(.22,1,.36,1);
+            border-radius: 2px;
+        }
+        .card-inner.is-flipped { transform: rotateY(180deg); } /* 클릭 시 Y축 180도 회전 */
+
+        /* 카드 호버 시 살짝 기울며 들어올리는 3D 미리보기 효과 (뒤집히지 않은 상태에서만) */
+        .card-scene:hover .card-inner:not(.is-flipped) {
+            transform: rotateY(14deg) translateY(-5px);
+            filter: drop-shadow(-6px 14px 28px rgba(0,0,0,.55));
+        }
+
+        /* 앞면·뒷면 공통: 절대 위치로 겹쳐 놓고, 뒷면이 보이지 않도록 설정 */
+        .card-face {
+            position: absolute; inset: 0; border-radius: 2px;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            overflow: hidden;
+        }
+
+        /* ── 카드 뒷면 (추첨 전 보이는 면) ── */
+        .card-back {
+            background: rgba(10, 11, 15, 0.82);
+            border: 1px solid var(--gold);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .card-back::before {
+            content: ''; position: absolute; inset: 0;
+            background-image:
+                repeating-linear-gradient(45deg, rgba(212,175,55,.055) 0, rgba(212,175,55,.055) 1px, transparent 0, transparent 50%),
+                repeating-linear-gradient(-45deg, rgba(212,175,55,.055) 0, rgba(212,175,55,.055) 1px, transparent 0, transparent 50%);
+            background-size: 18px 18px; border-radius: 2px;
+        }
+        .card-back::after { content: ''; position: absolute; inset: 9px; border: 1px solid rgba(212,175,55,.25); border-radius: 1px; }
+
+        /* 카드 뒷면 중앙 엠블럼 */
+        .emblem { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .emblem-text { font-size: 8px; letter-spacing: 5px; color: var(--gold); opacity: .55; text-transform: uppercase; }
+        .emblem-icon { font-size: 30px; color: var(--gold); opacity: .72; text-shadow: 0 0 22px rgba(212,175,55,.45); line-height: 1; }
+        .emblem-hr   { width: 36px; height: 1px; background: linear-gradient(90deg, transparent, rgba(212,175,55,.45), transparent); }
+
+        /* 카드 뒷면 빛 반사 애니메이션 (대각선 흰 빛이 주기적으로 스쳐 지나감) */
+        .card-shine { position: absolute; inset: 0; border-radius: 2px; overflow: hidden; pointer-events: none; }
+        .card-shine::after {
+            content: ''; position: absolute;
+            top: -100%; left: -70%; width: 45%; height: 300%;
+            background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,.06) 48%, rgba(255,255,255,.045) 52%, transparent 70%);
+            animation: shimmer 5.5s ease-in-out infinite;
+            animation-delay: var(--stagger, 0s); /* 카드마다 딜레이 달라 자연스러운 효과 */
+        }
+        @keyframes shimmer {
+            0%   { transform: translateX(0) skewX(-15deg); }
+            28%  { transform: translateX(480%) skewX(-15deg); } /* 빠르게 오른쪽으로 이동 */
+            100% { transform: translateX(480%) skewX(-15deg); } /* 나머지 시간 정지 후 반복 */
+        }
+
+        /* ── 카드 앞면 (클릭 후 공개되는 당첨자 면) ── */
+        .card-front {
+            transform: rotateY(180deg);
+            background: rgba(10, 11, 15, 0.88);
+            border: 1px solid var(--gold);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 22px 18px; gap: 0;
+        }
+        /* 상·하단 골드 장식선 */
+        .card-front::before { content: ''; position: absolute; top: 0;    left: 15%; right: 15%; height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+        .card-front::after  { content: ''; position: absolute; bottom: 0; left: 15%; right: 15%; height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+
+        /* 카드 앞면 내부 요소 */
+        .card-no          { font-size: 10px; letter-spacing: 4px; color: var(--gold); opacity: .65; margin-bottom: 10px; } /* No.01 */
+        .card-hr-front    { width: 28px; height: 1px; background: rgba(212,175,55,.3); margin-bottom: 12px; }              /* 구분선 */
+        .card-name        { font-weight: 600; text-align: center; color: var(--text); line-height: 1.3; word-break: keep-all; margin-bottom: 8px; }
+        .card-affiliation { font-weight: 300; font-size: 11.5px; color: var(--gold-dim); text-align: center; letter-spacing: 1.5px; word-break: keep-all; line-height: 1.4; }
+        .card-stars       { margin-top: 14px; font-size: 9px; color: var(--gold); opacity: .42; letter-spacing: 6px; }     /* ✦ ✦ ✦ 장식 */
+
+        /* ── 결과 하단 액션 버튼 영역 ── */
+        .result-actions { display: flex; gap: 14px; margin-top: 52px; flex-wrap: wrap; justify-content: center; }
+
+        .action-btn {
+            padding: 13px 40px; background: transparent;
+            border: 1px solid rgba(212,175,55,.35); border-radius: 2px;
+            color: var(--gold-dim);
+            font-family: 'Pretendard', sans-serif;
+            font-size: 12px; letter-spacing: 3.5px; text-transform: uppercase;
+            cursor: pointer; outline: none; transition: all .3s;
+        }
+        .action-btn:hover, .action-btn:focus-visible { background: var(--gold-faint); border-color: var(--gold); color: var(--gold); }
+        /* primary 버튼 (모두 공개): 기본부터 골드 틴트 */
+        .action-btn.primary { background: var(--gold-faint); border-color: rgba(212,175,55,.5); color: var(--gold); }
+        .action-btn.primary:hover, .action-btn.primary:focus-visible { background: var(--gold); color: #111317; }
+    </style>
+</head>
+<body>
+
+<div class="app">
+
+    <!-- ═══ HEADER ═══ -->
+    <header class="site-header">
+        <!-- 추첨 시작 버튼 — 헤더 우측 상단 -->
+        <div class="draw-fab">
+            <button class="cta-btn" id="drawBtn">
+                <span class="btn-text">✦&ensp; 추첨 시작 &ensp;✦</span>
+            </button>
+        </div>
+        <p class="lucky-draw-title">LUCKY DRAW</p>
+        <p class="hdr-eyebrow">Luxury Event Experience</p>
+        <h1 class="hdr-title">함께 이룬 성과, 함께 여는 미래</h1>
+        <p class="hdr-subtitle">교직원을 위한 감사 콘서트</p>
+        <div class="ornament"><span class="ornament-gem">◆ ◇ ◆</span></div>
+    </header>
+
+    <!-- ═══ SETUP SECTION: 참여자 등록 + 설정 + 명부 테이블 ═══ -->
+    <section class="setup-section" id="setupSection">
+
+        <!-- 상단 3열 컨트롤 바 -->
+        <div class="controls-bar">
+
+            <!-- Col 1: 참여자 등록 (엑셀 업로드 - 드래그앤드롭) -->
+            <div class="panel">
+                <p class="panel-label">참여자 등록 — 대량등록</p>
+                <div class="drop-zone" id="dropZone">
+                    <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
+                    <div class="drop-zone-content">
+                        <div class="drop-zone-icon">⬆</div>
+                        <div class="drop-zone-main">드래그 앤 드롭 / 파일 선택</div>
+                    </div>
+                    <span class="upload-status" id="uploadStatus" style="display:none"></span>
+                </div>
+            </div>
+
+            <!-- Col 2: 참여자 등록 (직접 입력) -->
+            <div class="panel">
+                <p class="panel-label">참여자 등록 — 개별등록</p>
+                <div class="manual-form">
+                    <input type="text" class="manual-input" id="manualName" placeholder="이름" maxlength="30">
+                    <input type="text" class="manual-input" id="manualAff" placeholder="소속" maxlength="30">
+                    <button class="manual-add-btn" id="manualAddBtn">
+                        <span class="btn-inner">✦&ensp;등록</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Col 3: 당첨자 셋팅 -->
+            <div class="panel">
+                <p class="panel-label">당첨자 셋팅</p>
+                <div class="winner-row">
+                    <button class="step-btn" id="btnMinus" aria-label="감소">−</button>
+                    <input type="number" class="winner-input" id="winnerCount" value="1" min="1">
+                    <button class="step-btn" id="btnPlus" aria-label="증가">+</button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 참여자 명부: 5열 그리드, 파일 로드 후 자동 업데이트 -->
+        <div class="participants-section">
+            <div class="participants-header">
+                <p class="participants-label">참여자 명부</p>
+                <div class="participants-meta-right">
+                    <span class="participants-count" id="tableCount">0명</span>
+                    <button class="clear-btn" id="clearBtn">초기화</button>
+                </div>
+            </div>
+            <div class="participants-grid" id="participantsGrid">
+                <!-- JS renderParticipantTable()이 이 안을 채움 -->
+                <div class="participants-empty">참가자를 등록하면 여기에 표시됩니다</div>
+            </div>
+        </div>
+
+    </section>
+
+    <!-- ═══ RESULT SECTION: 추첨 완료 후 카드 공개 화면 ═══ -->
+    <section class="result-section" id="resultSection">
+
+        <div class="result-header">
+            <p class="result-badge">— Winners Announced —</p>
+            <h2 class="result-heading">
+                당첨자 <span class="cnt" id="winnerDisplay">0</span>명이 선정되었습니다
+            </h2>
+            <p class="flip-prompt">카드를 클릭하면 당첨자가 공개됩니다 &nbsp;✦</p>
+        </div>
+
+        <!-- JS createCard()로 생성된 카드들이 여기에 추가됨 -->
+        <div class="cards-grid" id="cardsGrid"></div>
+
+        <div class="result-actions">
+            <button class="action-btn primary" id="revealAllBtn">모두 공개</button>
+            <button class="action-btn"         id="resetBtn">다시 추첨</button>
+        </div>
+
+    </section>
+
+</div>
+
+<script>
+    /* ═══════════════════════════════════════════════════
+       전역 상태
+       participants: 로드된 참여자 배열 [{ name, affiliation }]
+    ═══════════════════════════════════════════════════ */
+    let participants = [];
+
+    /* ═══════════════════════════════════════════════════
+       Fisher-Yates 셔플 — 배열을 무작위 순서로 섞어 반환
+       (원본 배열은 변경하지 않음)
+    ═══════════════════════════════════════════════════ */
+    function shuffle(arr) {
+        const a = [...arr]; // 원본 보호를 위해 복사
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]]; // 요소 교환
+        }
+        return a;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       XSS 방지 — 사용자 데이터를 HTML에 삽입하기 전에 이스케이프
+       예: "<script>" → "&lt;script&gt;"
+    ═══════════════════════════════════════════════════ */
+    function safe(str) {
+        const d = document.createElement('div');
+        d.textContent = str; // textContent 할당 시 자동 이스케이프
+        return d.innerHTML;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       파일 입력 이벤트 — 파일 선택 시 parseXlsx 호출
+       value를 초기화해 같은 파일을 재업로드할 수 있게 함
+    ═══════════════════════════════════════════════════ */
+    document.getElementById('fileInput').addEventListener('change', e => {
+        if (e.target.files[0]) parseXlsx(e.target.files[0]);
+        e.target.value = ''; // 같은 파일 재선택 허용
+    });
+
+    /* ═══════════════════════════════════════════════════
+       드래그앤드롭 존 이벤트
+       - 클릭 시 파일 선택 창 열기
+       - 드래그 오버/아웃 시 시각적 피드백
+       - 드롭 시 파일 파싱
+    ═══════════════════════════════════════════════════ */
+    const dropZone = document.getElementById('dropZone');
+
+    dropZone.addEventListener('click', () => document.getElementById('fileInput').click());
+
+    dropZone.addEventListener('dragover', e => {
+        e.preventDefault();
+        dropZone.classList.add('drag-over');
+    });
+
+    dropZone.addEventListener('dragleave', e => {
+        if (!dropZone.contains(e.relatedTarget)) dropZone.classList.remove('drag-over');
+    });
+
+    dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file) parseXlsx(file);
+    });
+
+    /* ═══════════════════════════════════════════════════
+       직접 입력 — 이름·소속 입력 후 등록 버튼 또는 Enter로 추가
+    ═══════════════════════════════════════════════════ */
+    function addManualParticipant() {
+        const nameEl = document.getElementById('manualName');
+        const affEl  = document.getElementById('manualAff');
+        const name   = nameEl.value.trim();
+        const aff    = affEl.value.trim();
+        if (!name) { nameEl.focus(); return; }
+        participants.push({ name, affiliation: aff });
+        renderParticipantTable(true);
+        nameEl.value = '';
+        affEl.value  = '';
+        nameEl.focus();
+    }
+
+    document.getElementById('manualAddBtn').addEventListener('click', addManualParticipant);
+    document.getElementById('manualName').addEventListener('keydown', e => {
+        if (e.key === 'Enter') document.getElementById('manualAff').focus();
+    });
+    document.getElementById('manualAff').addEventListener('keydown', e => {
+        if (e.key === 'Enter') addManualParticipant();
+    });
+
+    /* ═══════════════════════════════════════════════════
+       엑셀 파일 파싱 (SheetJS 사용)
+       - 첫 번째 시트의 2행부터 읽음 (1행은 헤더로 무시)
+       - A열: 이름 / B열: 소속
+    ═══════════════════════════════════════════════════ */
+    function parseXlsx(file) {
+        if (typeof XLSX === 'undefined') {
+            alert('SheetJS 라이브러리 로드에 실패했습니다.\n인터넷 연결을 확인해주세요.');
+            return;
+        }
+
+        // 확장자 체크 (.xlsx, .xls, .csv 허용)
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (!['xlsx', 'xls', 'csv'].includes(ext)) {
+            alert('지원하지 않는 파일 형식입니다.\n.xlsx / .xls / .csv 파일을 사용해주세요.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = e => {
+            try {
+                const wb   = XLSX.read(e.target.result, { type: 'array', codepage: 65001 });
+                const ws   = wb.Sheets[wb.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+                // 헤더 없이 1행부터 데이터인 경우도 허용 (1행이 이름이면 그대로 사용)
+                const startRow = rows.length > 0 && String(rows[0][0] || '').trim() !== '' ? 0 : 1;
+                // 첫 행이 "이름", "name" 등 헤더 키워드면 건너뜀
+                const headerKeywords = ['이름', 'name', '성명', '참가자'];
+                const firstCell = String(rows[0]?.[0] || '').trim().toLowerCase();
+                const skip = headerKeywords.some(k => firstCell.includes(k));
+                const dataStart = skip ? 1 : 0;
+
+                if (rows.length === 0 || (skip && rows.length < 2)) {
+                    alert('데이터가 없습니다.\nA열: 이름, B열: 소속 형식으로 작성해주세요.');
+                    return;
+                }
+
+                const newList = [];
+                for (let r = dataStart; r < rows.length; r++) {
+                    const name        = String(rows[r][0] || '').trim();
+                    const affiliation = String(rows[r][1] || '').trim();
+                    if (!name) continue;
+                    newList.push({ name, affiliation });
+                }
+
+                if (newList.length === 0) {
+                    alert('이름 데이터를 찾을 수 없습니다.\nA열에 이름이 있는지 확인해주세요.');
+                    return;
+                }
+
+                participants = newList;
+
+
+                renderParticipantTable(true);
+
+            } catch (err) {
+                alert('파일 파싱 중 오류가 발생했습니다.\n\n오류 내용: ' + err.message);
+                console.error(err);
+            }
+        };
+        reader.onerror = () => alert('파일을 읽는 중 오류가 발생했습니다. 다시 시도해주세요.');
+        reader.readAsArrayBuffer(file);
+    }
+
+    /* ═══════════════════════════════════════════════════
+       골드 파티클 버스트 — 지정 요소 중앙에서 16개 파티클이 퍼져나감
+       각 파티클의 이동 방향(--dx, --dy)과 딜레이(--delay)를 CSS 변수로 전달
+    ═══════════════════════════════════════════════════ */
+    function spawnParticles(originEl) {
+        const rect = originEl.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;  // 요소 중심 X
+        const cy = rect.top  + rect.height / 2; // 요소 중심 Y
+
+        for (let i = 0; i < 16; i++) {
+            const p     = document.createElement('span');
+            p.className = 'spark-particle';
+            const angle = (i / 16) * Math.PI * 2 + Math.random() * 0.6; // 균등 분산 + 약간의 무작위
+            const dist  = 24 + Math.random() * 58;                        // 이동 거리 (24~82px)
+            const size  = (3 + Math.random() * 4).toFixed(0);             // 크기 (3~7px)
+
+            p.style.cssText =
+                `left:${cx}px; top:${cy}px; width:${size}px; height:${size}px;` +
+                `--dx:${(Math.cos(angle) * dist).toFixed(1)}px;`  // X 방향 이동량
+                + `--dy:${(Math.sin(angle) * dist).toFixed(1)}px;`  // Y 방향 이동량
+                + `--delay:${(Math.random() * 0.2).toFixed(2)}s;`; // 0~0.2초 랜덤 딜레이
+            document.body.appendChild(p);
+            setTimeout(() => p.remove(), 1100); // 애니메이션 종료 후 DOM에서 제거
+        }
+    }
+
+    /* ═══════════════════════════════════════════════════
+       숫자 카운터 업 애니메이션 — 0에서 target까지 duration ms 동안 올라감
+       ease-out 커브(cubic) 적용으로 처음엔 빠르고 끝에서 느려짐
+    ═══════════════════════════════════════════════════ */
+    function animateCount(el, target, duration = 750) {
+        const start = performance.now();
+        (function tick(now) {
+            const t    = Math.min((now - start) / duration, 1); // 0~1 진행률
+            const ease = 1 - Math.pow(1 - t, 3);               // ease-out cubic
+            el.textContent = `${Math.round(ease * target)}명`;
+            if (t < 1) requestAnimationFrame(tick); // 완료 전까지 매 프레임 실행
+        })(start);
+    }
+
+    /* ═══════════════════════════════════════════════════
+       참여자 명부 테이블 렌더링
+       animate=true: 파티클·카운터 애니메이션 포함 (파일 로드 직후 호출 시)
+       animate=false: 즉시 업데이트 (삭제·초기화 등)
+    ═══════════════════════════════════════════════════ */
+    function renderParticipantTable(animate = false) {
+        const grid  = document.getElementById('participantsGrid');
+        const count = document.getElementById('tableCount');
+
+        // 참여자가 없으면 빈 상태 메시지 표시
+        if (participants.length === 0) {
+            count.textContent = '0명';
+            grid.innerHTML = '<div class="participants-empty">참가자를 등록하면 여기에 표시됩니다</div>';
+            return;
+        }
+
+        // 인원 수 표시 (animate 여부에 따라 숫자 올라가는 효과 적용)
+        if (animate) {
+            animateCount(count, participants.length);
+            spawnParticles(count); // 인원 수 텍스트 위치에서 파티클 발사
+        } else {
+            count.textContent = `${participants.length}명`;
+        }
+
+        // 그리드 초기화 후 참여자 셀 생성
+        grid.innerHTML = '';
+        participants.forEach((p, i) => {
+            const cell = document.createElement('div');
+            cell.className = 'participant-cell';
+            cell.innerHTML =
+                `<div class="pc-no">No.${String(i + 1).padStart(3, '0')}</div>`
+                + `<div class="pc-info">${safe(p.name)}${p.affiliation ? ` <span class="pc-sep">ㅣ</span> ${safe(p.affiliation)}` : ''}</div>`
+                + `<button class="pc-del" data-idx="${i}" aria-label="삭제">×</button>`;
+            grid.appendChild(cell);
+        });
+    }
+
+    /* 명부 셀의 × 버튼 클릭 → 해당 참여자 삭제 (이벤트 위임 방식) */
+    document.getElementById('participantsGrid').addEventListener('click', e => {
+        const btn = e.target.closest('[data-idx]'); // × 버튼이 클릭됐는지 확인
+        if (!btn) return;
+        participants.splice(parseInt(btn.dataset.idx, 10), 1); // 배열에서 해당 인덱스 제거
+        renderParticipantTable();
+        if (participants.length === 0) resetUploadStatus(); // 모두 삭제 시 상태 초기화
+    });
+
+    /* 초기화 버튼 — 참여자 배열 비우고 UI 리셋 */
+    document.getElementById('clearBtn').addEventListener('click', () => {
+        participants = [];
+        resetUploadStatus();
+        renderParticipantTable();
+    });
+
+    /* 업로드 상태 텍스트를 초기 상태("파일을 선택해 주세요")로 되돌림 */
+    function resetUploadStatus() {
+        const status = document.getElementById('uploadStatus');
+        status.textContent = '';
+        status.classList.remove('loaded');
+        status.style.display = 'none';
+    }
+
+    /* ═══════════════════════════════════════════════════
+       카드 DOM 생성 — 당첨자 한 명당 카드 하나 생성
+       winner: { name, affiliation }
+       index:  0-based 순번 (카드 번호, 애니메이션 딜레이에 사용)
+    ═══════════════════════════════════════════════════ */
+    function createCard(winner, index) {
+        // 카드가 많을수록 딜레이가 쌓이지 않도록 최대 2.5초로 제한
+        const delay   = `${Math.min(index * 0.11, 2.5)}s`;
+        // 이름 길이에 따라 폰트 크기 조정 (긴 이름이 카드 밖으로 넘치지 않도록)
+        const nameLen = winner.name.length;
+        const nameFsz = nameLen <= 4 ? '24px' : nameLen <= 7 ? '20px' : '15px';
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'card-wrapper';
+        wrapper.style.setProperty('--stagger', delay); // CSS 애니메이션 딜레이 전달
+
+        wrapper.innerHTML = `
+            <div class="card-scene" role="button" tabindex="0"
+                 aria-label="${safe(winner.name)} 카드 — 클릭해서 공개">
+                <div class="card-inner">
+                    <!-- 뒷면: 추첨 전 보이는 면 -->
+                    <div class="card-face card-back" aria-hidden="true">
+                        <div class="card-shine"></div>
+                        <div class="emblem">
+                            <div class="emblem-text">LUCKY</div>
+                            <div class="emblem-hr"></div>
+                            <div class="emblem-icon">✦</div>
+                            <div class="emblem-hr"></div>
+                            <div class="emblem-text">DRAW</div>
+                        </div>
+                    </div>
+                    <!-- 앞면: 클릭 후 공개되는 당첨자 정보 -->
+                    <div class="card-face card-front" aria-hidden="true">
+                        <div class="card-no">No.&nbsp;${String(index + 1).padStart(2, '0')}</div>
+                        <div class="card-hr-front"></div>
+                        <div class="card-name" style="font-size:${nameFsz}">${safe(winner.name)}</div>
+                        ${winner.affiliation
+                            ? `<div class="card-affiliation">${safe(winner.affiliation)}</div>`
+                            : ''}
+                        <div class="card-stars">✦ ✦ ✦</div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const scene = wrapper.querySelector('.card-scene');
+        const inner = wrapper.querySelector('.card-inner');
+
+        // 카드 뒤집기 — is-flipped 클래스 토글로 CSS 3D 회전 트리거
+        function flip() {
+            inner.classList.toggle('is-flipped');
+            // 스크린리더용 aria-label 업데이트
+            scene.setAttribute('aria-label',
+                inner.classList.contains('is-flipped')
+                    ? `${safe(winner.name)} — 공개됨`
+                    : `${safe(winner.name)} 카드 — 클릭해서 공개`
+            );
+        }
+
+        scene.addEventListener('click', flip);
+        // 키보드 접근성: Enter·Space 키로도 뒤집기 가능
+        scene.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+        });
+
+        return wrapper;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       추첨 실행
+       1. 유효성 검사 (참여자 없음, 인원 수 오류 등)
+       2. Fisher-Yates 셔플 후 앞에서 winnerCount명 슬라이스
+       3. 셋업 화면 숨기고 결과 화면 표시
+       4. 당첨자 카드 생성 및 스크롤 이동
+    ═══════════════════════════════════════════════════ */
+    function runDraw() {
+        if (participants.length === 0) {
+            alert('참여자를 등록해 주세요.');
+            return;
+        }
+
+        const winnerCount = parseInt(document.getElementById('winnerCount').value, 10);
+
+        if (!Number.isInteger(winnerCount) || winnerCount < 1) {
+            alert('당첨 인원은 1명 이상이어야 합니다.');
+            return;
+        }
+
+        if (winnerCount > participants.length) {
+            alert(
+                `당첨 인원(${winnerCount}명)이 참가자 수(${participants.length}명)보다 많습니다.\n` +
+                `당첨 인원을 줄이거나 참가자를 추가해 주세요.`
+            );
+            return;
+        }
+
+        // 셔플 후 앞에서 winnerCount명 선택
+        const winners = shuffle(participants).slice(0, winnerCount);
+
+        // 화면 전환: 셋업 → 결과
+        document.getElementById('setupSection').style.display = 'none';
+        document.querySelector('.draw-fab').style.display = 'none';
+        const resultSection = document.getElementById('resultSection');
+        resultSection.classList.add('visible');
+
+        // 당첨자 수 표시 업데이트
+        document.getElementById('winnerDisplay').textContent = winners.length;
+
+        // 카드 생성 및 그리드에 추가
+        const grid = document.getElementById('cardsGrid');
+        grid.innerHTML = '';
+        winners.forEach((winner, i) => grid.appendChild(createCard(winner, i)));
+
+        // 결과 화면으로 부드럽게 스크롤
+        resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    /* ═══════════════════════════════════════════════════
+       모두 공개 — 뒤집히지 않은 카드를 160ms 간격으로 순차 공개
+    ═══════════════════════════════════════════════════ */
+    function revealAll() {
+        [...document.querySelectorAll('.card-inner:not(.is-flipped)')]
+            .forEach((inner, i) => setTimeout(() => inner.classList.add('is-flipped'), i * 160));
+    }
+
+    /* ═══════════════════════════════════════════════════
+       다시 추첨 — 결과 화면을 숨기고 셋업 화면으로 복귀
+       참여자 명부는 유지되어 바로 재추첨 가능
+    ═══════════════════════════════════════════════════ */
+    function resetDraw() {
+        document.getElementById('setupSection').style.display = '';
+        document.querySelector('.draw-fab').style.display = '';
+        document.getElementById('resultSection').classList.remove('visible');
+        document.getElementById('cardsGrid').innerHTML = '';
+        renderParticipantTable(); // 명부 테이블 다시 그리기
+        document.getElementById('setupSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    /* ═══════════════════════════════════════════════════
+       이벤트 바인딩
+    ═══════════════════════════════════════════════════ */
+    document.getElementById('drawBtn').addEventListener('click', runDraw);
+    document.getElementById('revealAllBtn').addEventListener('click', revealAll);
+    document.getElementById('resetBtn').addEventListener('click', resetDraw);
+
+    // + 버튼: 당첨자 수 1 증가
+    document.getElementById('btnPlus').addEventListener('click', () => {
+        const el = document.getElementById('winnerCount');
+        el.value = Math.max(1, (parseInt(el.value) || 0) + 1);
+    });
+    // − 버튼: 당첨자 수 1 감소 (최솟값 1)
+    document.getElementById('btnMinus').addEventListener('click', () => {
+        const el = document.getElementById('winnerCount');
+        el.value = Math.max(1, (parseInt(el.value) || 2) - 1);
+    });
+</script>
+
+
+<div class="wipe-panel" id="wipePanel"></div>
+<script>
+    window.addEventListener('DOMContentLoaded', () => {
+        const panel = document.getElementById('wipePanel');
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => { panel.classList.add('leave'); });
+        });
+    });
+</script>
+
+</body>
+</html>

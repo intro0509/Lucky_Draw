@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dong-A LUCKY DRAW</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <!-- Pretendard: 기본 UI 글꼴 -->
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
+    <!-- 엑셀 파일 파싱을 위한 SheetJS 라이브러리 (index2.html 참조) -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+
+    <style>
+        /* ── 리셋 & CSS 변수 ── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg:         #111317;
+            --bg2:        #1a1c23;
+            --bg3:        #1e2130;
+            --gold:       #d4af37;
+            --gold-lt:    #f0d878;
+            --gold-dim:   #9a7e28;
+            --gold-faint: rgba(212,175,55,.1);
+            --gold-line:  rgba(212,175,55,.22);
+            --text:       #f2ede4;
+            --text-dim:   #8a8070;
+            --r:          6px;
+
+            /* ★ 배경 이미지 설정 ★
+               로컬 파일: url('파일명.jpg')  |  온라인: url('https://...')  |  없음: none */
+            --bg-image: url('background2.jpg');
+
+            /* 배경 이미지 위 어두운 오버레이 투명도 (0.0 ~ 1.0) */
+            --overlay-opacity: 0.7;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            min-height: 100vh;
+            background-color: var(--bg);
+            background-image: var(--bg-image);
+            background-size: cover;
+            background-position: center center;
+            background-attachment: fixed;
+            color: var(--text);
+            font-family: 'Pretendard', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* 레이어 1: 어두운 오버레이 */
+        body::before {
+            content: ''; position: fixed; inset: 0;
+            background: rgba(255,255,255,.6);
+            pointer-events: none; z-index: 0;
+        }
+
+        /* 레이어 2: 골드 방사형 빛 */
+        body::after {
+            content: ''; position: fixed; inset: 0;
+            background:
+                radial-gradient(ellipse 80% 55% at 15% 8%,  rgba(212,175,55,.06) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 45% at 85% 92%, rgba(212,175,55,.05) 0%, transparent 60%);
+            pointer-events: none; z-index: 0;
+        }
+
+        /* ── 앱 래퍼 ── */
+        .app {
+            position: relative; z-index: 1;
+            min-height: 100vh;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 52px 24px 88px;
+        }
+
+        /* ═══════════════════════════════════
+           HEADER
+        ═══════════════════════════════════ */
+        .site-header {
+            text-align: left;
+            margin-bottom: 56px;
+            width: 100%; max-width: 900px;
+        }
+
+        .hdr-eyebrow {
+            font-family: 'Pretendard', sans-serif;
+            font-size: 10px; letter-spacing: 8px; text-transform: uppercase;
+            color: var(--gold); opacity: .7; margin-bottom: 14px;
+        }
+
+        .hdr-title {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 700;
+            font-size: clamp(26px, 4vw, 45px);
+            line-height: 1.3; letter-spacing: .06em; color: var(--text);
+            -webkit-text-stroke: 1.5px var(--text);
+            text-shadow:
+                2px  2px 0 rgba(0,0,0,.45),
+                4px  4px 0 rgba(0,0,0,.25),
+                0 0 40px rgba(212,175,55,.18);
+        }
+
+        .hdr-subtitle {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 300;
+            font-size: clamp(14px, 2vw, 18px);
+            letter-spacing: .25em;
+            color: var(--gold);
+            opacity: .8;
+            margin-top: 10px;
+        }
+
+        .ornament {
+            display: flex; align-items: center; justify-content: flex-start;
+            gap: 10px; margin-top: 18px;
+        }
+        .ornament::before { display: none; }
+        .ornament::after  { content: ''; width: 100px; height: 1px; background: linear-gradient(90deg, rgba(212,175,55,.4), transparent); }
+        .ornament-gem { font-size: 9px; color: var(--gold); opacity: .55; letter-spacing: 3px; }
+
+        /* ── LUCKY DRAW 대형 타이틀 ── */
+        .lucky-draw-title {
+            text-align: center;
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 900;
+            font-size: clamp(52px, 9vw, 104px);
+            letter-spacing: 0.18em;
+            background: linear-gradient(135deg, var(--gold-dim) 0%, var(--gold-lt) 45%, var(--gold) 55%, var(--gold-dim) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 28px rgba(212,175,55,.45)) drop-shadow(0 4px 12px rgba(0,0,0,.6));
+            margin-bottom: 36px;
+        }
+
+        /* ═══════════════════════════════════
+           SETUP SECTION
+        ═══════════════════════════════════ */
+        .setup-section { width: 100%; max-width: 900px; animation: fadeUp .7s ease both; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0);    }
+        }
+
+        .setup-grid {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px; align-items: start;
+        }
+        @media (max-width: 720px) { .setup-grid { grid-template-columns: 1fr; } }
+
+        /* 패널 공통 */
+        .panel {
+            background: var(--bg2);
+            border: 1px solid var(--gold-line);
+            border-radius: var(--r);
+            padding: 24px 28px;
+        }
+
+        .panel-label {
+            font-family: 'Pretendard', sans-serif;
+            font-size: 10px; letter-spacing: 5px; text-transform: uppercase;
+            color: var(--gold-dim); margin-bottom: 16px;
+        }
+
+        /* ── 입력 방식 탭 ── */
+        .input-tabs {
+            display: flex;
+            border: 1px solid var(--gold-line);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .input-tab {
+            flex: 1;
+            padding: 10px 14px;
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            font-family: 'Pretendard', sans-serif;
+            font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            transition: background .2s, color .2s;
+            outline: none;
+        }
+
+        .input-tab:first-child { border-right: 1px solid var(--gold-line); }
+
+        .input-tab.active {
+            background: var(--gold-faint);
+            color: var(--gold);
+        }
+
+        .input-tab:hover:not(.active) {
+            background: rgba(212,175,55,.05);
+            color: rgba(212,175,55,.6);
+        }
+
+        .tab-icon { font-size: 13px; }
+
+        /* ── 탭 패널 ── */
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* ── 드롭존 (엑셀 업로드) ── */
+        .drop-zone {
+            position: relative;
+            border: 2px dashed var(--gold-line);
+            border-radius: 4px;
+            padding: 32px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color .3s, background .3s;
+            background: rgba(0,0,0,.15);
+        }
+
+        .drop-zone:hover,
+        .drop-zone.drag-over {
+            border-color: rgba(212,175,55,.5);
+            background: rgba(212,175,55,.04);
+        }
+
+        /* file input을 드롭존 전체에 투명하게 오버레이 */
+        .drop-zone input[type="file"] {
+            position: absolute; inset: 0;
+            width: 100%; height: 100%;
+            opacity: 0; cursor: pointer;
+        }
+
+        .drop-icon {
+            font-size: 26px; color: var(--gold); opacity: .4;
+            display: block; margin-bottom: 10px;
+        }
+
+        .drop-text {
+            font-size: 13px; color: var(--text-dim); margin-bottom: 6px;
+        }
+
+        .drop-hint {
+            font-size: 11px; color: var(--gold-dim);
+            letter-spacing: .5px; opacity: .75; line-height: 1.6;
+        }
+
+        /* ── 미리보기 영역 (엑셀 로드 후 표시) ── */
+        .preview-meta {
+            display: flex; justify-content: space-between;
+            align-items: center; margin-bottom: 8px;
+        }
+
+        .preview-meta-left { font-size: 11px; color: var(--text-dim); }
+
+        .preview-meta-right {
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        .preview-count {
+            font-family: 'Pretendard', sans-serif;
+            font-size: 11px; color: var(--gold-dim);
+        }
+
+        .clear-btn {
+            background: none;
+            border: 1px solid var(--gold-line); border-radius: 2px;
+            color: var(--gold-dim);
+            font-family: 'Pretendard', sans-serif;
+            font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+            padding: 4px 10px; cursor: pointer;
+            transition: all .2s; outline: none;
+        }
+
+        .clear-btn:hover {
+            background: var(--gold-faint);
+            border-color: rgba(212,175,55,.4); color: var(--gold);
+        }
+
+        .preview-list {
+            max-height: 185px;
+            overflow-y: auto;
+            display: flex; flex-direction: column; gap: 4px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--gold-dim) transparent;
+        }
+
+        .preview-list::-webkit-scrollbar { width: 3px; }
+        .preview-list::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 3px; }
+
+        .preview-item {
+            display: flex; align-items: center;
+            background: rgba(0,0,0,.2);
+            border: 1px solid var(--gold-line); border-radius: 3px;
+            padding: 7px 12px; gap: 6px;
+            font-size: 12.5px;
+            animation: itemSlideIn 0.42s cubic-bezier(.34,1.56,.64,1) both,
+                       itemGlow    0.6s  ease-out both;
+            animation-delay: var(--item-delay, 0s),
+                             calc(var(--item-delay, 0s) + 0.36s);
+        }
+
+        @keyframes itemSlideIn {
+            0%   { opacity: 0; transform: translateX(-30px) scale(0.86); filter: blur(4px); }
+            60%  { opacity: 1; filter: blur(0); }
+            78%  { transform: translateX(5px) scale(1.018); }
+            100% { opacity: 1; transform: translateX(0) scale(1); filter: blur(0); }
+        }
+
+        @keyframes itemGlow {
+            0%   { box-shadow: none; border-color: var(--gold-line); }
+            45%  { box-shadow: 0 0 0 1px rgba(212,175,55,.5), 0 0 16px rgba(212,175,55,.28); border-color: rgba(212,175,55,.6); }
+            100% { box-shadow: none; border-color: var(--gold-line); }
+        }
+
+        /* ── 미리보기 영역 입장 ── */
+        .preview-area { margin-top: 14px; transform-origin: top center; }
+
+        .preview-area.is-appearing {
+            animation: previewAreaIn 0.5s cubic-bezier(.22,1,.36,1) both;
+        }
+
+        @keyframes previewAreaIn {
+            from { opacity: 0; transform: scaleY(0.78) translateY(-10px); }
+            to   { opacity: 1; transform: scaleY(1)    translateY(0);     }
+        }
+
+        /* ── 골드 파티클 ── */
+        .spark-particle {
+            position: fixed;
+            border-radius: 50%;
+            background: var(--gold);
+            pointer-events: none; z-index: 9999;
+            animation: sparkFly 0.8s ease-out both;
+            animation-delay: var(--delay, 0s);
+        }
+
+        @keyframes sparkFly {
+            0%   { transform: translate(0, 0) scale(1.3); opacity: 1; }
+            100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
+        }
+
+        .pi-name { color: var(--text); flex-shrink: 0; }
+
+        .pi-aff {
+            font-size: 11px; color: var(--gold-dim);
+            margin-left: auto; margin-right: 6px;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+
+        .pi-del {
+            background: none; border: none;
+            color: rgba(212,175,55,.28); font-size: 15px; line-height: 1;
+            cursor: pointer; padding: 0 2px; flex-shrink: 0;
+            transition: color .2s;
+        }
+
+        .pi-del:hover { color: rgba(212,175,55,.7); }
+
+        /* ── 수기 입력 텍스트에어리어 ── */
+        .ptx {
+            width: 100%; height: 295px;
+            background: rgba(0,0,0,.22);
+            border: 1px solid var(--gold-line); border-radius: 4px;
+            color: var(--text);
+            font-family: 'Pretendard', sans-serif;
+            font-size: 13.5px; line-height: 1.9;
+            padding: 14px 16px;
+            resize: vertical; outline: none;
+            transition: border-color .3s;
+            caret-color: var(--gold);
+        }
+
+        .ptx:focus { border-color: rgba(212,175,55,.5); background: rgba(0,0,0,.28); }
+        .ptx::placeholder { color: rgba(138,128,112,.5); font-size: 12px; line-height: 1.85; }
+
+        .ptx-meta {
+            display: flex; justify-content: space-between;
+            align-items: center; margin-top: 8px;
+        }
+
+        .ptx-hint  { font-size: 11px; color: var(--text-dim); line-height: 1.5; }
+        .ptx-count { font-family: 'Pretendard', sans-serif; font-size: 11px; color: var(--gold-dim); white-space: nowrap; margin-left: 10px; }
+
+        /* ── 우측 설정 컬럼 ── */
+        .settings-col { display: flex; flex-direction: column; gap: 20px; }
+
+        .winner-input {
+            width: 100%;
+            background: rgba(0,0,0,.25);
+            border: 1px solid var(--gold-line); border-radius: 4px;
+            color: var(--text);
+            font-family: 'Pretendard', sans-serif;
+            font-size: 38px; font-weight: 400; text-align: center;
+            padding: 10px 12px; outline: none;
+            transition: border-color .3s;
+            -moz-appearance: textfield; appearance: textfield;
+        }
+
+        .winner-input::-webkit-inner-spin-button,
+        .winner-input::-webkit-outer-spin-button { -webkit-appearance: none; appearance: none; }
+        .winner-input:focus { border-color: rgba(212,175,55,.5); }
+
+        .stepper { display: flex; gap: 8px; margin-top: 10px; }
+
+        .step-btn {
+            flex: 1; height: 38px;
+            background: var(--gold-faint);
+            border: 1px solid var(--gold-line); border-radius: 3px;
+            color: var(--gold); font-size: 22px; line-height: 1;
+            cursor: pointer; user-select: none;
+            transition: background .2s, border-color .2s;
+        }
+
+        .step-btn:hover { background: rgba(212,175,55,.2); border-color: rgba(212,175,55,.45); }
+
+        .guide-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+        .guide-list li { font-size: 12px; color: var(--text-dim); line-height: 1.6; display: flex; gap: 10px; }
+        .guide-list li .sn {
+            font-family: 'Pretendard', sans-serif; font-size: 10px;
+            letter-spacing: 1px; color: var(--gold-dim);
+            flex-shrink: 0; margin-top: 2px;
+        }
+
+        /* ── 추첨 시작 버튼 ── */
+        .cta-wrap { margin-top: 28px; display: flex; justify-content: center; }
+
+        .cta-btn {
+            position: relative;
+            padding: 17px 68px;
+            background: transparent;
+            border: 1px solid var(--gold); border-radius: 2px;
+            color: var(--gold);
+            font-family: 'Pretendard', sans-serif;
+            font-size: 15px; letter-spacing: 5px; text-transform: uppercase;
+            cursor: pointer; overflow: hidden; outline: none;
+            transition: color .4s;
+        }
+
+        .cta-btn::before {
+            content: ''; position: absolute; inset: 0;
+            background: var(--gold);
+            transform: scaleX(0); transform-origin: left center;
+            transition: transform .45s cubic-bezier(.22,1,.36,1);
+        }
+
+        .cta-btn:hover::before,
+        .cta-btn:focus-visible::before { transform: scaleX(1); }
+        .cta-btn:hover, .cta-btn:focus-visible { color: #111317; }
+        .cta-btn .btn-text { position: relative; z-index: 1; }
+
+        /* ═══════════════════════════════════
+           RESULT SECTION
+        ═══════════════════════════════════ */
+        .result-section {
+            display: none; width: 100%; max-width: 1160px;
+            flex-direction: column; align-items: center;
+        }
+        .result-section.visible { display: flex; }
+
+        .result-header {
+            text-align: center; margin-bottom: 48px;
+            animation: fadeUp .6s ease both;
+        }
+
+        .result-badge {
+            font-family: 'Pretendard', sans-serif;
+            font-size: 10px; letter-spacing: 7px; text-transform: uppercase;
+            color: var(--gold-dim); margin-bottom: 10px;
+        }
+
+        .result-heading {
+            font-family: 'Pretendard', sans-serif;
+            font-size: clamp(26px, 3.5vw, 38px);
+            font-weight: 400; color: var(--text);
+        }
+
+        .result-heading .cnt { color: var(--gold); font-style: italic; }
+        .flip-prompt { margin-top: 10px; font-size: 12px; color: var(--text-dim); letter-spacing: .5px; }
+
+        /* ── 카드 그리드 ── */
+        .cards-grid {
+            display: flex; flex-wrap: wrap;
+            justify-content: center; gap: 20px; width: 100%;
+        }
+
+        /* ═══════════════════════════════════
+           CARD — stagger 입장 애니메이션
+        ═══════════════════════════════════ */
+        .card-wrapper {
+            animation: cardIn .65s cubic-bezier(.34,1.38,.64,1) both;
+            animation-delay: var(--stagger, 0s);
+        }
+
+        @keyframes cardIn {
+            0%   { opacity: 0; transform: translateY(56px) scale(.85) rotate(-2deg); }
+            100% { opacity: 1; transform: translateY(0)    scale(1)   rotate(0deg);  }
+        }
+
+        .card-scene {
+            width: 175px; height: 265px;
+            perspective: 1100px;
+            cursor: pointer;
+        }
+
+        .card-inner {
+            width: 100%; height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform .9s cubic-bezier(.22,1,.36,1);
+            border-radius: var(--r);
+        }
+
+        .card-inner.is-flipped { transform: rotateY(180deg); }
+
+        .card-scene:hover .card-inner:not(.is-flipped) {
+            transform: rotateY(14deg) translateY(-5px);
+            filter: drop-shadow(-6px 14px 28px rgba(0,0,0,.55));
+        }
+
+        .card-face {
+            position: absolute; inset: 0;
+            border-radius: var(--r);
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            overflow: hidden;
+        }
+
+        /* ─── 카드 뒷면 ─── */
+        .card-back {
+            background: linear-gradient(150deg, #1e2135 0%, #12141d 100%);
+            border: 1px solid rgba(212,175,55,.28);
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .card-back::before {
+            content: ''; position: absolute; inset: 0;
+            background-image:
+                repeating-linear-gradient( 45deg, rgba(212,175,55,.065) 0, rgba(212,175,55,.065) 1px, transparent 0, transparent 50%),
+                repeating-linear-gradient(-45deg, rgba(212,175,55,.065) 0, rgba(212,175,55,.065) 1px, transparent 0, transparent 50%);
+            background-size: 18px 18px;
+            border-radius: var(--r);
+        }
+
+        .card-back::after {
+            content: ''; position: absolute; inset: 9px;
+            border: 1px solid rgba(212,175,55,.17); border-radius: 3px;
+        }
+
+        .emblem {
+            position: relative; z-index: 1;
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
+        }
+
+        .emblem-text {
+            font-family: 'Pretendard', sans-serif;
+            font-size: 8px; letter-spacing: 5px;
+            color: var(--gold); opacity: .55; text-transform: uppercase;
+        }
+
+        .emblem-icon {
+            font-size: 30px; color: var(--gold); opacity: .72;
+            text-shadow: 0 0 22px rgba(212,175,55,.45); line-height: 1;
+        }
+
+        .emblem-hr {
+            width: 36px; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(212,175,55,.45), transparent);
+        }
+
+        .card-shine {
+            position: absolute; inset: 0;
+            border-radius: var(--r); overflow: hidden; pointer-events: none;
+        }
+
+        .card-shine::after {
+            content: ''; position: absolute;
+            top: -100%; left: -70%; width: 45%; height: 300%;
+            background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,.06) 48%, rgba(255,255,255,.045) 52%, transparent 70%);
+            animation: shimmer 5.5s ease-in-out infinite;
+            animation-delay: var(--stagger, 0s);
+        }
+
+        @keyframes shimmer {
+            0%   { transform: translateX(0)    skewX(-15deg); }
+            28%  { transform: translateX(480%) skewX(-15deg); }
+            100% { transform: translateX(480%) skewX(-15deg); }
+        }
+
+        /* ─── 카드 앞면 ─── */
+        .card-front {
+            transform: rotateY(180deg);
+            background: linear-gradient(160deg, #23263a 0%, #181a27 100%);
+            border: 1px solid rgba(212,175,55,.42);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 22px 18px; gap: 0;
+        }
+
+        .card-front::before {
+            content: ''; position: absolute;
+            top: 0; left: 15%; right: 15%; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+        }
+
+        .card-front::after {
+            content: ''; position: absolute;
+            bottom: 0; left: 15%; right: 15%; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+        }
+
+        .card-no {
+            font-family: 'Pretendard', sans-serif;
+            font-size: 10px; letter-spacing: 4px;
+            color: var(--gold); opacity: .65; margin-bottom: 10px;
+        }
+
+        .card-hr-front { width: 28px; height: 1px; background: rgba(212,175,55,.3); margin-bottom: 12px; }
+
+        .card-name {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 600; text-align: center;
+            color: var(--text); line-height: 1.3;
+            word-break: keep-all; margin-bottom: 8px;
+        }
+
+        .card-affiliation {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 300; font-size: 11.5px;
+            color: var(--gold-dim); text-align: center;
+            letter-spacing: 1.5px; word-break: keep-all; line-height: 1.4;
+        }
+
+        .card-stars { margin-top: 14px; font-size: 9px; color: var(--gold); opacity: .42; letter-spacing: 6px; }
+
+        /* ── 결과 하단 버튼 ── */
+        .result-actions {
+            display: flex; gap: 14px; margin-top: 52px;
+            flex-wrap: wrap; justify-content: center;
+        }
+
+        .action-btn {
+            padding: 13px 40px;
+            background: transparent;
+            border: 1px solid rgba(212,175,55,.35); border-radius: 2px;
+            color: var(--gold-dim);
+            font-family: 'Pretendard', sans-serif;
+            font-size: 12px; letter-spacing: 3.5px; text-transform: uppercase;
+            cursor: pointer; outline: none; transition: all .3s;
+        }
+
+        .action-btn:hover, .action-btn:focus-visible {
+            background: var(--gold-faint); border-color: var(--gold); color: var(--gold);
+        }
+
+        .action-btn.primary {
+            background: var(--gold-faint);
+            border-color: rgba(212,175,55,.5); color: var(--gold);
+        }
+
+        .action-btn.primary:hover, .action-btn.primary:focus-visible {
+            background: var(--gold); color: #111317;
+        }
+
+        /* ── 푸터 ── */
+        .site-footer {
+            margin-top: 72px; text-align: center;
+            font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+            color: rgba(138,128,112,.32);
+        }
+    </style>
+</head>
+<body>
+
+<div class="app">
+
+    <!-- ═══ HEADER ═══ -->
+    <header class="site-header">
+        <p class="lucky-draw-title">LUCKY DRAW</p>
+        <p class="hdr-eyebrow">Luxury Event Experience</p>
+        <h1 class="hdr-title">함께 이룬 성과, 함께 여는 미래</h1>
+        <p class="hdr-subtitle">교직원을 위한 감사 콘서트</p>
+        <div class="ornament"><span class="ornament-gem">◆ ◇ ◆</span></div>
+    </header>
+
+    <!-- ═══ SETUP SECTION ═══ -->
+    <section class="setup-section" id="setupSection">
+        <div class="setup-grid">
+
+            <!-- 참가자 명단 입력 패널 -->
+            <div class="panel">
+                <p class="panel-label">Participants — 참가자 명단</p>
+
+                <!-- 입력 방식 탭 전환 -->
+                <div class="input-tabs">
+                    <button class="input-tab active" id="tabExcel">
+                        <span class="tab-icon">⬆</span> 엑셀 업로드
+                    </button>
+                    <button class="input-tab" id="tabManual">
+                        <span class="tab-icon">✏</span> 수기 입력
+                    </button>
+                </div>
+
+                <!-- ── 탭 1: 엑셀 업로드 ── -->
+                <div class="tab-panel active" id="panelExcel">
+
+                    <!-- 드래그 앤 드롭 업로드 영역 -->
+                    <div class="drop-zone" id="dropZone">
+                        <!-- 투명 파일 인풋: 클릭·드롭 모두 이 요소로 처리 -->
+                        <input type="file" id="fileInput" accept=".xlsx,.xls">
+                        <span class="drop-icon">⬆</span>
+                        <p class="drop-text">파일을 드래그하거나 클릭하여 업로드</p>
+                        <p class="drop-hint">
+                            .xlsx · .xls 지원<br>
+                            1행: 헤더(무시) &nbsp;|&nbsp; A열: 이름 &nbsp;|&nbsp; B열: 소속
+                        </p>
+                    </div>
+
+                    <!-- 로드된 참가자 미리보기 (엑셀 로드 후 표시) -->
+                    <div class="preview-area" id="previewArea" style="display:none">
+                        <div class="preview-meta">
+                            <span class="preview-meta-left">불러온 참가자</span>
+                            <div class="preview-meta-right">
+                                <span class="preview-count" id="previewCount">0명</span>
+                                <button class="clear-btn" id="clearPreviewBtn">초기화</button>
+                            </div>
+                        </div>
+                        <div class="preview-list" id="previewList"></div>
+                    </div>
+
+                </div>
+
+                <!-- ── 탭 2: 수기 입력 ── -->
+                <div class="tab-panel" id="panelManual">
+                    <textarea
+                        class="ptx" id="participantsInput"
+                        spellcheck="false" autocomplete="off"
+                        placeholder="참가자를 한 줄에 한 명씩 입력하세요.&#10;&#10;【 직접 입력 】&#10;이름만, 또는 이름 뒤에 Tab 키 후 소속 입력&#10;예)  홍길동&#10;     김철수	개발팀&#10;&#10;【 엑셀 복사 붙여넣기 】&#10;엑셀에서 이름·소속 두 열을 선택 → Ctrl+C&#10;→ 이 칸에 Ctrl+V (탭 구분 자동 인식)"
+                    ></textarea>
+                    <div class="ptx-meta">
+                        <span class="ptx-hint">엑셀 복사 붙여넣기 및 이름만 입력 모두 지원됩니다</span>
+                        <span class="ptx-count" id="participantCount">0명</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 우측 설정 컬럼 -->
+            <div class="settings-col">
+
+                <!-- 당첨 인원 설정 -->
+                <div class="panel">
+                    <p class="panel-label">Winners — 당첨 인원</p>
+                    <input type="number" class="winner-input" id="winnerCount" value="1" min="1">
+                    <div class="stepper">
+                        <button class="step-btn" id="btnMinus" aria-label="감소">−</button>
+                        <button class="step-btn" id="btnPlus"  aria-label="증가">+</button>
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+
+        <div class="cta-wrap">
+            <button class="cta-btn" id="drawBtn">
+                <span class="btn-text">✦&ensp; 추첨 시작 &ensp;✦</span>
+            </button>
+        </div>
+    </section>
+
+    <!-- ═══ RESULT SECTION ═══ -->
+    <section class="result-section" id="resultSection">
+
+        <div class="result-header">
+            <p class="result-badge">— Winners Announced —</p>
+            <h2 class="result-heading">
+                당첨자 <span class="cnt" id="winnerDisplay">0</span>명이 선정되었습니다
+            </h2>
+            <p class="flip-prompt">카드를 클릭하면 당첨자가 공개됩니다 &nbsp;✦</p>
+        </div>
+
+        <div class="cards-grid" id="cardsGrid"></div>
+
+        <div class="result-actions">
+            <button class="action-btn primary" id="revealAllBtn">모두 공개</button>
+            <button class="action-btn"         id="resetBtn">다시 추첨</button>
+        </div>
+
+    </section>
+
+
+</div>
+
+<script>
+    /* ═══════════════════════════════════════════════════
+       STATE
+    ═══════════════════════════════════════════════════ */
+    let activeTab         = 'excel';  // 현재 활성 탭: 'excel' | 'manual'
+    let excelParticipants = [];       // 엑셀에서 불러온 참가자 배열
+
+    /* ═══════════════════════════════════════════════════
+       UTIL: Fisher-Yates 셔플
+    ═══════════════════════════════════════════════════ */
+    function shuffle(arr) {
+        const a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       UTIL: XSS 방지
+    ═══════════════════════════════════════════════════ */
+    function safe(str) {
+        const d = document.createElement('div');
+        d.textContent = str;
+        return d.innerHTML;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       PARSER: 수기 입력 텍스트 → 참가자 배열
+       탭(\t) 구분으로 이름·소속 분리 (엑셀 복사 붙여넣기 지원)
+    ═══════════════════════════════════════════════════ */
+    function parseManual(raw) {
+        return raw
+            .split('\n')
+            .map(l => l.trim())
+            .filter(l => l.length > 0)
+            .map(l => {
+                const parts = l.split('\t').map(s => s.trim());
+                return { name: parts[0] || '', affiliation: parts[1] || '' };
+            })
+            .filter(p => p.name.length > 0);
+    }
+
+    /* ═══════════════════════════════════════════════════
+       TAB SWITCHING: 엑셀 업로드 ↔ 수기 입력 전환
+    ═══════════════════════════════════════════════════ */
+    function switchTab(tab) {
+        activeTab = tab;
+        document.getElementById('tabExcel').classList.toggle('active', tab === 'excel');
+        document.getElementById('tabManual').classList.toggle('active', tab === 'manual');
+        document.getElementById('panelExcel').classList.toggle('active', tab === 'excel');
+        document.getElementById('panelManual').classList.toggle('active', tab === 'manual');
+    }
+
+    document.getElementById('tabExcel').addEventListener('click', () => switchTab('excel'));
+    document.getElementById('tabManual').addEventListener('click', () => switchTab('manual'));
+
+    /* ═══════════════════════════════════════════════════
+       DRAG & DROP / FILE SELECT: 드래그 앤 드롭 업로드
+    ═══════════════════════════════════════════════════ */
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+
+    dropZone.addEventListener('dragover', e => {
+        e.preventDefault();
+        dropZone.classList.add('drag-over');
+    });
+
+    dropZone.addEventListener('dragleave', e => {
+        /* 자식 요소로 이동할 때 오판하지 않도록 relatedTarget 확인 */
+        if (!dropZone.contains(e.relatedTarget)) {
+            dropZone.classList.remove('drag-over');
+        }
+    });
+
+    dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        if (e.dataTransfer.files[0]) parseXlsx(e.dataTransfer.files[0]);
+    });
+
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files[0]) parseXlsx(fileInput.files[0]);
+        fileInput.value = ''; /* 같은 파일 재업로드 허용 */
+    });
+
+    /* ═══════════════════════════════════════════════════
+       XLSX PARSER: SheetJS로 엑셀 파일 파싱
+       - 첫 행은 헤더로 간주하여 무시 (2행부터 데이터)
+       - A열: 이름 / B열: 소속
+    ═══════════════════════════════════════════════════ */
+    function parseXlsx(file) {
+        if (typeof XLSX === 'undefined') {
+            alert('SheetJS 라이브러리 로드에 실패했습니다.\n인터넷 연결을 확인해주세요.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = e => {
+            try {
+                const wb   = XLSX.read(e.target.result, { type: 'array' });
+                const ws   = wb.Sheets[wb.SheetNames[0]];       /* 첫 번째 시트 */
+                const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+                if (rows.length < 2) {
+                    alert('데이터가 없습니다.\n파일 형식을 확인해주세요. (1행: 헤더, 2행부터 데이터)');
+                    return;
+                }
+
+                let added = 0;
+                for (let r = 1; r < rows.length; r++) {    /* r=1: 헤더 행 건너뜀 */
+                    const name        = String(rows[r][0] || '').trim();
+                    const affiliation = String(rows[r][1] || '').trim();
+                    if (!name) continue;
+                    excelParticipants.push({ name, affiliation });
+                    added++;
+                }
+
+                renderPreview(true);
+
+                /* 드롭존 안내 문구 업데이트 */
+                document.querySelector('.drop-text').textContent =
+                    `${added}명 로드 완료 — 다른 파일로 교체하려면 클릭`;
+
+            } catch (err) {
+                alert('파일 파싱 중 오류가 발생했습니다.\n파일을 확인해주세요.');
+                console.error(err);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    /* ═══════════════════════════════════════════════════
+       UTIL: 골드 파티클 버스트
+    ═══════════════════════════════════════════════════ */
+    function spawnParticles(originEl) {
+        const rect = originEl.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top  + rect.height / 2;
+        const count = 16;
+        for (let i = 0; i < count; i++) {
+            const p = document.createElement('span');
+            p.className = 'spark-particle';
+            const angle = (i / count) * Math.PI * 2 + Math.random() * 0.6;
+            const dist  = 24 + Math.random() * 58;
+            const size  = (3 + Math.random() * 4).toFixed(0);
+            p.style.cssText =
+                `left:${cx}px; top:${cy}px; width:${size}px; height:${size}px;` +
+                `--dx:${(Math.cos(angle) * dist).toFixed(1)}px;` +
+                `--dy:${(Math.sin(angle) * dist).toFixed(1)}px;` +
+                `--delay:${(Math.random() * 0.2).toFixed(2)}s;`;
+            document.body.appendChild(p);
+            setTimeout(() => p.remove(), 1100);
+        }
+    }
+
+    /* ═══════════════════════════════════════════════════
+       UTIL: 숫자 카운터 업 애니메이션
+    ═══════════════════════════════════════════════════ */
+    function animateCount(el, target, duration = 750) {
+        const start = performance.now();
+        (function tick(now) {
+            const t    = Math.min((now - start) / duration, 1);
+            const ease = 1 - Math.pow(1 - t, 3);
+            el.textContent = `${Math.round(ease * target)}명`;
+            if (t < 1) requestAnimationFrame(tick);
+        })(start);
+    }
+
+    /* ═══════════════════════════════════════════════════
+       PREVIEW RENDER: 로드된 참가자 목록 화면에 그리기
+       animate=true 이면 파티클·카운터·슬라이드인 효과 적용
+    ═══════════════════════════════════════════════════ */
+    function renderPreview(animate = false) {
+        const area  = document.getElementById('previewArea');
+        const list  = document.getElementById('previewList');
+        const count = document.getElementById('previewCount');
+
+        if (excelParticipants.length === 0) {
+            area.style.display = 'none';
+            count.textContent  = '0명';
+            return;
+        }
+
+        const wasHidden = area.style.display === 'none' || area.style.display === '';
+        area.style.display = 'block';
+
+        if (animate) {
+            animateCount(count, excelParticipants.length);
+            spawnParticles(count);
+            if (wasHidden) {
+                area.classList.remove('is-appearing');
+                void area.offsetWidth; // reflow 강제
+                area.classList.add('is-appearing');
+            }
+        } else {
+            count.textContent = `${excelParticipants.length}명`;
+        }
+
+        list.innerHTML = '';
+
+        excelParticipants.forEach((p, i) => {
+            const item = document.createElement('div');
+            item.className = 'preview-item';
+            if (animate) {
+                item.style.setProperty('--item-delay', `${Math.min(i * 0.05, 1.2).toFixed(3)}s`);
+            }
+            item.innerHTML =
+                `<span class="pi-name">${safe(p.name)}</span>` +
+                (p.affiliation ? `<span class="pi-aff">${safe(p.affiliation)}</span>` : '') +
+                `<button class="pi-del" data-idx="${i}" aria-label="삭제">×</button>`;
+            list.appendChild(item);
+        });
+    }
+
+    /* 미리보기 목록에서 개별 삭제 (이벤트 위임) */
+    document.getElementById('previewList').addEventListener('click', e => {
+        const btn = e.target.closest('[data-idx]');
+        if (!btn) return;
+        excelParticipants.splice(parseInt(btn.dataset.idx, 10), 1);
+        renderPreview();
+    });
+
+    /* 미리보기 전체 초기화 */
+    document.getElementById('clearPreviewBtn').addEventListener('click', () => {
+        excelParticipants = [];
+        renderPreview();
+        document.querySelector('.drop-text').textContent = '파일을 드래그하거나 클릭하여 업로드';
+    });
+
+    /* ═══════════════════════════════════════════════════
+       CARD FACTORY: 카드 DOM 생성
+    ═══════════════════════════════════════════════════ */
+    function createCard(winner, index) {
+        const delay   = `${Math.min(index * 0.11, 2.5)}s`;
+        const nameLen = winner.name.length;
+        const nameFsz = nameLen <= 4 ? '24px' : nameLen <= 7 ? '20px' : '15px';
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'card-wrapper';
+        wrapper.style.setProperty('--stagger', delay);
+
+        wrapper.innerHTML = `
+            <div class="card-scene" role="button" tabindex="0"
+                 aria-label="${safe(winner.name)} 카드 — 클릭해서 공개">
+                <div class="card-inner">
+                    <div class="card-face card-back" aria-hidden="true">
+                        <div class="card-shine"></div>
+                        <div class="emblem">
+                            <div class="emblem-text">Grand</div>
+                            <div class="emblem-hr"></div>
+                            <div class="emblem-icon">✦</div>
+                            <div class="emblem-hr"></div>
+                            <div class="emblem-text">Raffle</div>
+                        </div>
+                    </div>
+                    <div class="card-face card-front" aria-hidden="true">
+                        <div class="card-no">No.&nbsp;${String(index + 1).padStart(2, '0')}</div>
+                        <div class="card-hr-front"></div>
+                        <div class="card-name" style="font-size:${nameFsz}">${safe(winner.name)}</div>
+                        ${winner.affiliation
+                            ? `<div class="card-affiliation">${safe(winner.affiliation)}</div>`
+                            : ''}
+                        <div class="card-stars">✦ ✦ ✦</div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const scene = wrapper.querySelector('.card-scene');
+        const inner = wrapper.querySelector('.card-inner');
+
+        function flip() {
+            inner.classList.toggle('is-flipped');
+            scene.setAttribute('aria-label',
+                inner.classList.contains('is-flipped')
+                    ? `${safe(winner.name)} — 공개됨`
+                    : `${safe(winner.name)} 카드 — 클릭해서 공개`
+            );
+        }
+
+        scene.addEventListener('click', flip);
+        scene.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+        });
+
+        return wrapper;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       DRAW: 추첨 실행
+       - 엑셀 탭: excelParticipants 배열 사용
+       - 수기 탭: textarea 파싱 결과 사용
+    ═══════════════════════════════════════════════════ */
+    function runDraw() {
+        const winnerCount = parseInt(document.getElementById('winnerCount').value, 10);
+        let participants;
+
+        if (activeTab === 'excel') {
+            if (excelParticipants.length === 0) {
+                alert('엑셀 파일을 업로드해 주세요.');
+                return;
+            }
+            participants = excelParticipants;
+        } else {
+            const rawText = document.getElementById('participantsInput').value;
+            if (!rawText.trim()) {
+                alert('참가자 명단을 입력해 주세요.');
+                return;
+            }
+            participants = parseManual(rawText);
+            if (participants.length === 0) {
+                alert('유효한 참가자 데이터가 없습니다.\n명단을 다시 확인해 주세요.');
+                return;
+            }
+        }
+
+        if (!Number.isInteger(winnerCount) || winnerCount < 1) {
+            alert('당첨 인원은 1명 이상이어야 합니다.');
+            return;
+        }
+
+        if (winnerCount > participants.length) {
+            alert(
+                `당첨 인원(${winnerCount}명)이 참가자 수(${participants.length}명)보다 많습니다.\n` +
+                `당첨 인원을 줄이거나 참가자를 추가해 주세요.`
+            );
+            return;
+        }
+
+        const winners = shuffle(participants).slice(0, winnerCount);
+
+        document.getElementById('setupSection').style.display = 'none';
+        const resultSection = document.getElementById('resultSection');
+        resultSection.classList.add('visible');
+
+        document.getElementById('winnerDisplay').textContent = winners.length;
+
+        const grid = document.getElementById('cardsGrid');
+        grid.innerHTML = '';
+        winners.forEach((winner, i) => grid.appendChild(createCard(winner, i)));
+
+        resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    /* ═══════════════════════════════════════════════════
+       REVEAL ALL / RESET
+    ═══════════════════════════════════════════════════ */
+    function revealAll() {
+        const unflipped = [...document.querySelectorAll('.card-inner:not(.is-flipped)')];
+        unflipped.forEach((inner, i) => {
+            setTimeout(() => inner.classList.add('is-flipped'), i * 160);
+        });
+    }
+
+    function resetDraw() {
+        document.getElementById('setupSection').style.display = '';
+        document.getElementById('resultSection').classList.remove('visible');
+        document.getElementById('cardsGrid').innerHTML = '';
+        document.getElementById('setupSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    /* ═══════════════════════════════════════════════════
+       이벤트 바인딩
+    ═══════════════════════════════════════════════════ */
+    document.getElementById('drawBtn').addEventListener('click', runDraw);
+    document.getElementById('revealAllBtn').addEventListener('click', revealAll);
+    document.getElementById('resetBtn').addEventListener('click', resetDraw);
+
+    /* 수기 입력 탭 실시간 참가자 수 카운터 */
+    document.getElementById('participantsInput').addEventListener('input', () => {
+        const n = parseManual(document.getElementById('participantsInput').value).length;
+        document.getElementById('participantCount').textContent = `${n}명`;
+    });
+
+    /* 당첨 인원 ± 스텝 버튼 */
+    document.getElementById('btnPlus').addEventListener('click', () => {
+        const el = document.getElementById('winnerCount');
+        el.value = Math.max(1, (parseInt(el.value) || 0) + 1);
+    });
+    document.getElementById('btnMinus').addEventListener('click', () => {
+        const el = document.getElementById('winnerCount');
+        el.value = Math.max(1, (parseInt(el.value) || 2) - 1);
+    });
+</script>
+
+</body>
+</html>

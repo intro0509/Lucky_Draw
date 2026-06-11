@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dong-A LUCKY DRAW</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --gold:       #d4af37;
+            --gold-lt:    #f0d878;
+            --gold-dim:   #9a7e28;
+            --gold-line:  rgba(212,175,55,.3);
+            --gold-faint: rgba(212,175,55,.1);
+            --text:       #f2ede4;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: 'Pretendard', sans-serif;
+            color: var(--text);
+            overflow-x: hidden;
+            background-color: #0a0b0f;
+        }
+
+        /* 레이어 0: 배경 이미지 */
+        .bg-image {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            object-fit: cover;
+            object-position: center bottom;
+            pointer-events: none;
+        }
+
+        .logo-top-left {
+            position: fixed;
+            top: calc(50vh - 255px);
+            left: calc(50% - 370px);
+            transform: translateY(-50%);
+            z-index: 2;
+            height: 170px;
+            width: auto;
+            pointer-events: none;
+        }
+
+        /* 레이어 1: 어두운 오버레이 */
+        .bg-overlay {
+            position: fixed; inset: 0; z-index: 1;
+            background: rgba(255,255,255,.6);
+            pointer-events: none;
+        }
+
+        /* 레이어 2: 골드 방사형 빛 */
+        .bg-glow {
+            position: fixed; inset: 0; z-index: 2;
+            background: radial-gradient(ellipse 70% 60% at 50% 40%, rgba(212,175,55,.07) 0%, transparent 65%);
+            pointer-events: none;
+        }
+
+        /* ── 중앙 레이아웃 ── */
+        .stage {
+            position: relative; z-index: 3;
+            height: 100vh;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 0;
+            text-align: center;
+            padding: 40px 24px;
+        }
+
+        /* ── eyebrow 위 문구 ── */
+        .pre-eyebrow {
+            margin-bottom: 16px;
+            animation: fadeDown .8s ease both;
+        }
+        .pre-eyebrow p:first-child {
+            font-family: 'Noto Serif KR', serif;
+            font-size: 36px; font-weight: 900;
+            letter-spacing: 0.15em;
+            background: linear-gradient(135deg, #3d1c25 0%, #c47a7a 45%, #b5716c 55%, #3d1c25 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 2px 8px rgba(180, 80, 80, 0.25));
+            margin-bottom: 10px;
+        }
+        .pre-eyebrow p:last-child {
+            font-family: 'Noto Serif KR', serif;
+            font-size: 28px; font-weight: 600;
+            font-style: italic;
+            letter-spacing: 0.22em;
+            color: rgba(160, 100, 80, 0.85);
+            text-shadow: 0 1px 6px rgba(180, 80, 80, 0.15);
+        }
+
+        /* ── 상단 작은 라벨 ── */
+        .eyebrow {
+            font-size: 11px; letter-spacing: 7px; text-transform: uppercase;
+            color: var(--gold); opacity: .7;
+            margin-bottom: 28px;
+            animation: fadeDown .8s ease both;
+        }
+
+        /* ── LUCKY DRAW 대형 텍스트 ── */
+        .hero-title {
+            font-family: 'Bodoni MT', 'Bodoni 72', 'Didot', serif;
+            font-weight: 900;
+            font-size: clamp(56px, 10vw, 120px);
+            letter-spacing: 0.16em;
+            line-height: 1;
+            background: linear-gradient(135deg, var(--gold-dim) 0%, var(--gold-lt) 45%, var(--gold) 55%, var(--gold-dim) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 32px rgba(212,175,55,.5)) drop-shadow(0 6px 16px rgba(0,0,0,.7));
+            animation: fadeUp .9s cubic-bezier(.22,1,.36,1) both;
+            animation-delay: .1s;
+        }
+
+        /* ── 장식 구분선 ── */
+        .divider {
+            display: flex; align-items: center; gap: 14px;
+            margin: 28px 0 24px;
+            animation: fadeUp .8s ease both;
+            animation-delay: .25s;
+        }
+
+        .divider::before, .divider::after {
+            content: ''; width: 80px; height: 1px;
+        }
+        .divider::before { background: linear-gradient(90deg, transparent, var(--gold-line)); }
+        .divider::after  { background: linear-gradient(270deg, transparent, var(--gold-line)); }
+
+        .divider-gem { font-size: 9px; color: var(--gold); opacity: .6; letter-spacing: 4px; }
+
+        /* ── 부제 ── */
+        .sub-title {
+            font-size: 15px; font-weight: 300;
+            letter-spacing: 0.28em;
+            color: rgba(74, 37, 53, 0.9);
+            margin-bottom: 56px;
+            animation: fadeUp .8s ease both;
+            animation-delay: .35s;
+        }
+
+        /* ── 입장 버튼 ── */
+        .enter-btn {
+            position: relative;
+            padding: 18px 72px;
+            background: transparent;
+            border: 1px solid var(--gold);
+            border-radius: 2px;
+            color: var(--gold);
+            font-family: 'Pretendard', sans-serif;
+            font-size: 14px; font-weight: 500;
+            letter-spacing: 5px; text-transform: uppercase;
+            text-decoration: none;
+            cursor: pointer; overflow: hidden; outline: none;
+            transition: color .4s;
+            animation: fadeUp .8s ease both;
+            animation-delay: .5s;
+        }
+
+        .enter-btn::before {
+            content: ''; position: absolute; inset: 0;
+            background: var(--gold);
+            transform: scaleX(0); transform-origin: left center;
+            transition: transform .45s cubic-bezier(.22,1,.36,1);
+        }
+
+        .enter-btn:hover::before { transform: scaleX(1); }
+        .enter-btn:hover { color: #0a0b0d; }
+
+        .enter-btn span { position: relative; z-index: 1; }
+
+        /* ── 하단 장식 텍스트 ── */
+        .footer-label {
+            position: fixed; bottom: 28px; z-index: 3;
+            font-size: 10px; letter-spacing: 4px; text-transform: uppercase;
+            color: rgba(212,175,55,.28);
+            animation: fadeUp .8s ease both;
+            animation-delay: .7s;
+        }
+
+        /* ── 페이지 전환 밝기 변화 ── */
+        .transition-overlay {
+            position: fixed; inset: 0; z-index: 999;
+            background: #fff;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .5s ease;
+        }
+        .transition-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        /* ── 애니메이션 ── */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(22px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeDown {
+            from { opacity: 0; transform: translateY(-16px); }
+            to   { opacity: .7; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<img class="bg-image" src="background1.jpg" alt="">
+<img class="logo-top-left" src="80thanniversary.png" alt="80th Anniversary">
+<div class="bg-overlay"></div>
+<div class="bg-glow"></div>
+
+<div class="stage">
+    <div class="pre-eyebrow">
+        <p>함께 이룬 성과, 함께 여는 미래</p>
+        <p>- 교직원을 위한 감사 콘서트 -</p>
+    </div>
+
+    <div class="divider"><span class="divider-gem">◆ ◇ ◆</span></div>
+
+    <h1 class="hero-title">LUCKY DRAW</h1>
+
+    <div class="divider" style="margin-bottom: 48px;"><span class="divider-gem">◆ ◇ ◆</span></div>
+    <a class="enter-btn" href="draw.html" id="enterBtn">
+        <span>✦&ensp; 추첨 시작하기 &ensp;✦</span>
+    </a>
+</div>
+
+
+<div class="transition-overlay" id="transitionOverlay"></div>
+
+<script>
+    document.getElementById('enterBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        const overlay = document.getElementById('transitionOverlay');
+        overlay.classList.add('active');
+        setTimeout(() => { window.location.href = this.href; }, 500);
+    });
+</script>
+
+</body>
+</html>
