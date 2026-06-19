@@ -1087,7 +1087,8 @@
                 }
 
                 participants = newList;
-                showCountToast(newList.length);
+
+
                 renderParticipantTable(true);
 
             } catch (err) {
