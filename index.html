@@ -47,7 +47,7 @@
         .logo-top-left {
             position: fixed;
             top: calc(50vh - 255px);
-            left: calc(50% - 370px);
+            left: calc(50% - 150px);
             transform: translateY(-50%);
             z-index: 2;
             height: 170px;
@@ -55,13 +55,6 @@
             pointer-events: none;
             animation: fadeIn 1.2s ease both;
             animation-delay: .4s;
-        }
-
-        /* 레이어 1: 어두운 오버레이 */
-        .bg-overlay {
-            position: fixed; inset: 0; z-index: 1;
-            background: rgba(255,255,255,.6);
-            pointer-events: none;
         }
 
         /* 레이어 2: 골드 방사형 빛 */
@@ -79,7 +72,7 @@
             align-items: center; justify-content: center;
             gap: 0;
             text-align: center;
-            padding: 40px 24px;
+            padding: 40px 24px 40px 30%;
         }
 
         /* ── eyebrow 위 문구 ── */
@@ -228,9 +221,8 @@
 </head>
 <body>
 
-<img class="bg-image" src="background1.jpg" alt="">
+<video class="bg-image" id="bgVideo" autoplay muted loop playsinline src="ref_2.mp4"></video>
 <img class="logo-top-left" src="80thanniversary.png" alt="80th Anniversary">
-<div class="bg-overlay"></div>
 <div class="bg-glow"></div>
 
 <div class="stage">
@@ -259,6 +251,8 @@
         overlay.classList.add('active');
         setTimeout(() => { window.location.href = this.href; }, 500);
     });
+
+    document.getElementById('bgVideo').playbackRate = 0.6;
 </script>
 
 </body>
