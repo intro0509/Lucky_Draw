@@ -1,259 +1,274 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dong-A LUCKY DRAW</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600;900&display=swap" rel="stylesheet">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css"
+      rel="stylesheet"
+    />
+
+    <!-- 최신 Chromium(126+)에서 페이지 간 이동 시 브라우저 네이티브 크로스페이드 전환 -->
+    <style>
+      @view-transition {
+        navigation: auto;
+      }
+    </style>
 
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-        :root {
-            --gold:       #d4af37;
-            --gold-lt:    #f0d878;
-            --gold-dim:   #9a7e28;
-            --gold-line:  rgba(212,175,55,.3);
-            --gold-faint: rgba(212,175,55,.1);
-            --text:       #f2ede4;
-        }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background-color: #0a0b0f;
+      }
 
-        html {
-            scroll-behavior: smooth;
-        }
+      /* 1920×1080 고정 캔버스 — 노트북 화면에 맞춰 비율 유지한 채 스케일됨 */
+      .canvas {
+        width: 1920px;
+        height: 1080px;
+        position: absolute;
+        top: 0;
+        left: 0;
+        transform-origin: top left;
+        overflow: hidden;
+        opacity: 0;
+        transition: opacity 0.45s ease;
+      }
+      .canvas.loaded { opacity: 1; }
+      .canvas.leaving { opacity: 0; }
 
-        body {
-            min-height: 100vh;
-            font-family: 'Pretendard', sans-serif;
-            color: var(--text);
-            overflow-x: hidden;
-            background-color: #0a0b0f;
-        }
+      .bg-image {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+        object-fit: cover;
+        object-position: center bottom;
+        pointer-events: none;
+      }
 
-        /* 레이어 0: 배경 이미지 */
-        .bg-image {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: 0;
-            object-fit: cover;
-            object-position: left bottom;
-            pointer-events: none;
-        }
+      /* ── 우측 텍스트 패널 ── */
+      .panel {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        right: 6.5%;
+        height: 100%;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
 
-        .logo-top-left {
-            position: fixed;
-            top: calc(50vh - 255px);
-            left: calc(50% - 100px);
-            transform: translateY(-50%);
-            z-index: 2;
-            height: 170px;
-            width: auto;
-            pointer-events: none;
-            animation: fadeIn 1.2s ease both;
-            animation-delay: .4s;
-        }
+      /* 1) 이어브로우 */
+      .eyebrow {
+        display: flex;
+        align-items: center;
+        gap: 22px;
+        margin-bottom: 52px;
+      }
 
-        /* 레이어 2: 골드 방사형 빛 */
-        .bg-glow {
-            position: fixed; inset: 0; z-index: 2;
-            background: radial-gradient(ellipse 70% 60% at 50% 40%, rgba(212,175,55,.07) 0%, transparent 65%);
-            pointer-events: none;
-        }
+      .eyebrow-line {
+        width: 56px;
+        height: 2px;
+        background: rgba(201, 165, 103, 0.7);
+      }
 
-        /* ── 중앙 레이아웃 ── */
-        .stage {
-            position: relative; z-index: 3;
-            height: 100vh;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            gap: 0;
-            text-align: center;
-            padding: 40px 24px 40px 30%;
-        }
+      .eyebrow-text {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 400;
+        font-size: 24px;
+        color: #e5c79c;
+        letter-spacing: 0.3em;
+        text-indent: 0.3em;
+        white-space: nowrap;
+      }
 
-        /* ── eyebrow 위 문구 ── */
-        .pre-eyebrow {
-            margin-bottom: 16px;
-            animation: fadeDown .8s ease both;
-        }
-        .pre-eyebrow p:first-child {
-            font-family: 'Noto Serif KR', serif;
-            font-size: clamp(24px, 3.5vw, 36px); font-weight: 900;
-            letter-spacing: 0.15em;
-            background: linear-gradient(135deg, #3d1c25 0%, #c47a7a 45%, #b5716c 55%, #3d1c25 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            filter: drop-shadow(0 2px 8px rgba(180, 80, 80, 0.25));
-            margin-bottom: 10px;
-        }
-        .pre-eyebrow p:last-child {
-            font-family: 'Noto Serif KR', serif;
-            font-size: clamp(16px, 2.5vw, 28px); font-weight: 600;
-            font-style: italic;
-            letter-spacing: 0.22em;
-            color: rgba(160, 100, 80, 0.85);
-            text-shadow: 0 1px 6px rgba(180, 80, 80, 0.15);
-        }
+      /* 2) 타이틀 */
+      .title-wrap {
+        filter: drop-shadow(0 0 26px rgba(226, 194, 136, 0.32));
+        margin-bottom: 48px;
+      }
 
-        /* ── 상단 작은 라벨 ── */
-        .eyebrow {
-            font-size: 11px; letter-spacing: 7px; text-transform: uppercase;
-            color: var(--gold); opacity: .7;
-            margin-bottom: 28px;
-            animation: fadeDown .8s ease both;
-        }
+      .title {
+        font-family: 'Noto Serif KR', serif;
+        font-weight: 800;
+        font-size: 100px;
+        line-height: 1.25;
+        letter-spacing: -0.01em;
+        text-align: center;
+        background: linear-gradient(135deg, #fbf3e4 10%, #c9a567 90%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
 
-        /* ── LUCKY DRAW 대형 텍스트 ── */
-        .hero-title {
-            font-family: 'Bodoni MT', 'Bodoni 72', 'Didot', serif;
-            font-weight: 900;
-            font-size: clamp(56px, 10vw, 120px);
-            letter-spacing: 0.16em;
-            line-height: 1;
-            background: linear-gradient(135deg, var(--gold-dim) 0%, var(--gold-lt) 45%, var(--gold) 55%, var(--gold-dim) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            filter: drop-shadow(0 0 32px rgba(212,175,55,.5)) drop-shadow(0 6px 16px rgba(0,0,0,.7));
-            animation: fadeUp .9s cubic-bezier(.22,1,.36,1) both;
-            animation-delay: .1s;
-        }
+      /* 3) 디바이더 */
+      .divider {
+        width: 120px;
+        height: 2px;
+        background: rgba(201, 165, 103, 0.65);
+        margin-bottom: 46px;
+      }
 
-        /* ── 장식 구분선 ── */
-        .divider {
-            display: flex; align-items: center; gap: 14px;
-            margin: 30px 0 25px;
-            animation: fadeIn 1.2s ease both;
-            animation-delay: .25s;
-        }
+      /* 4) 서브카피 */
+      .subcopy {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 400;
+        font-size: 24px;
+        line-height: 1.8;
+        color: #d3c3a9;
+        text-align: center;
+        margin-bottom: 60px;
+      }
 
-        .divider::before, .divider::after {
-            content: ''; width: 80px; height: 1px;
-        }
-        .divider::before { background: linear-gradient(90deg, transparent, var(--gold-line)); }
-        .divider::after  { background: linear-gradient(270deg, transparent, var(--gold-line)); }
+      /* 5) 버튼 */
+      .enter-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 26px;
+        width: 392px;
+        height: 62px;
+        border-radius: 999px;
+        border: none;
+        background: linear-gradient(180deg, #e8d0a6 0%, #d5b47a 100%);
+        box-shadow: 0 6px 22px rgba(0, 0, 0, 0.18);
+        text-decoration: none;
+        cursor: pointer;
+        transition:
+          transform 0.25s ease,
+          filter 0.25s ease;
+      }
 
-        .divider-gem { font-size: 9px; color: var(--gold); opacity: .6; letter-spacing: 4px; }
+      .enter-btn:hover {
+        transform: translateY(-1.5px);
+        filter: brightness(1.04);
+      }
 
-        /* ── 부제 ── */
-        .sub-title {
-            font-size: 15px; font-weight: 300;
-            letter-spacing: 0.28em;
-            color: rgba(74, 37, 53, 0.9);
-            margin-bottom: 56px;
-            animation: fadeUp .8s ease both;
-            animation-delay: .35s;
-        }
+      .enter-btn-label {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 600;
+        font-size: 20px;
+        color: #3a2c22;
+      }
 
-        /* ── 입장 버튼 ── */
-        .enter-btn {
-            position: relative;
-            padding: 18px 72px;
-            background: transparent;
-            border: 1px solid var(--gold);
-            border-radius: 2px;
-            color: var(--gold);
-            font-family: 'Pretendard', sans-serif;
-            font-size: 14px; font-weight: 500;
-            letter-spacing: 5px; text-transform: uppercase;
-            text-decoration: none;
-            cursor: pointer; overflow: hidden; outline: none;
-            transition: color .4s;
-            animation: fadeUp .8s ease both;
-            animation-delay: .5s;
-        }
-
-        .enter-btn::before {
-            content: ''; position: absolute; inset: 0;
-            background: var(--gold);
-            transform: scaleX(0); transform-origin: left center;
-            transition: transform .45s cubic-bezier(.22,1,.36,1);
-        }
-
-        .enter-btn:hover::before { transform: scaleX(1); }
-        .enter-btn:hover { color: #0a0b0d; }
-
-        .enter-btn span { position: relative; z-index: 1; }
-
-        /* ── 하단 장식 텍스트 ── */
-        .footer-label {
-            position: fixed; bottom: 28px; z-index: 3;
-            font-size: 10px; letter-spacing: 4px; text-transform: uppercase;
-            color: rgba(212,175,55,.28);
-            animation: fadeUp .8s ease both;
-            animation-delay: .7s;
-        }
-
-        /* ── 페이지 전환 밝기 변화 ── */
-        .transition-overlay {
-            position: fixed; inset: 0; z-index: 999;
-            background: #fff;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity .5s ease;
-        }
-        .transition-overlay.active {
-            opacity: 1;
-            pointer-events: all;
-        }
-
-        /* ── 애니메이션 ── */
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(22px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes fadeDown {
-            from { opacity: 0; transform: translateY(-16px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to   { opacity: 1; }
-        }
+      .enter-btn svg {
+        width: 24px;
+        height: 24px;
+        color: #3a2c22;
+        flex-shrink: 0;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
+    <div class="canvas" id="canvas">
+      <video
+        class="bg-image"
+        src="New%20Images/Lucky Draw.mp4"
+        poster="New%20Images/main.png"
+        autoplay
+        muted
+        loop
+        playsinline
+      ></video>
 
-<video class="bg-image" id="bgVideo" autoplay muted loop playsinline src="ref_2.mp4"></video>
-<img class="logo-top-left" src="80thanniversary.png" alt="80th Anniversary">
-<div class="bg-glow"></div>
+      <div class="panel">
+        <div class="eyebrow">
+          <span class="eyebrow-line"></span>
+          <span class="eyebrow-text">LUCKY DRAW EVENT</span>
+          <span class="eyebrow-line"></span>
+        </div>
 
-<div class="stage">
-    <div class="pre-eyebrow">
-        <p>함께 이룬 성과, 함께 여는 미래</p>
-        <p>- 교직원을 위한 감사 콘서트 -</p>
+        <div class="title-wrap">
+          <h1 class="title">
+            함께 이룬 성과,<br />
+            함께 여는 미래
+          </h1>
+        </div>
+
+        <div class="divider"></div>
+
+        <p class="subcopy">
+          지금 행운의 주인공이 되어보세요!
+        </p>
+
+        <a class="enter-btn" href="draw.html">
+          <span class="enter-btn-label">경품 추첨 참여하기</span>
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M5 12h14M13 6l6 6-6 6" />
+          </svg>
+        </a>
+      </div>
     </div>
 
-    <div class="divider"><span class="divider-gem">◆ ◇ ◆</span></div>
+    <script>
+      function fitCanvas() {
+        var scale = Math.min(
+          window.innerWidth / 1920,
+          window.innerHeight / 1080,
+        );
+        var offsetX = (window.innerWidth - 1920 * scale) / 2;
+        var offsetY = (window.innerHeight - 1080 * scale) / 2;
+        var canvas = document.getElementById('canvas');
+        canvas.style.transform =
+          'translate(' +
+          offsetX +
+          'px, ' +
+          offsetY +
+          'px) scale(' +
+          scale +
+          ')';
+      }
+      fitCanvas();
+      window.addEventListener('resize', fitCanvas);
 
-    <h1 class="hero-title">LUCKY DRAW</h1>
+      // 페이지 진입 시 부드럽게 페이드인
+      var canvasEl = document.getElementById('canvas');
+      window.addEventListener('load', function () {
+        requestAnimationFrame(function () {
+          canvasEl.classList.add('loaded');
+        });
+      });
 
-    <div class="divider" style="margin-top: 25px; margin-bottom: 50px;"><span class="divider-gem">◆ ◇ ◆</span></div>
-    <a class="enter-btn" href="draw.html" id="enterBtn">
-        <span>✦&ensp; 추첨 시작하기 &ensp;✦</span>
-    </a>
-</div>
-
-
-<div class="transition-overlay" id="transitionOverlay"></div>
-
-<script>
-    document.getElementById('enterBtn').addEventListener('click', function(e) {
+      // draw.html로 이동하기 전 페이드아웃 후 전환 (View Transitions 미지원 브라우저 대응)
+      document.querySelector('.enter-btn').addEventListener('click', function (e) {
+        var href = this.getAttribute('href');
+        if (!href) return;
         e.preventDefault();
-        const overlay = document.getElementById('transitionOverlay');
-        overlay.classList.add('active');
-        setTimeout(() => { window.location.href = this.href; }, 500);
-    });
-
-    document.getElementById('bgVideo').playbackRate = 0.6;
-</script>
-
-</body>
+        canvasEl.classList.remove('loaded');
+        canvasEl.classList.add('leaving');
+        setTimeout(function () {
+          window.location.href = href;
+        }, 420);
+      });
+    </script>
+  </body>
 </html>
