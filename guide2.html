@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dong-A LUCKY DRAW</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css"
+      rel="stylesheet"
+    />
+
+    <!-- 최신 Chromium(126+)에서 페이지 간 이동 시 브라우저 네이티브 크로스페이드 전환 -->
+    <style>
+      @view-transition {
+        navigation: auto;
+      }
+    </style>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background-color: #0a0b0f;
+      }
+
+      /* 1920×1080 고정 캔버스 — 노트북 화면에 맞춰 비율 유지한 채 스케일됨 */
+      .canvas {
+        width: 1920px;
+        height: 1080px;
+        position: absolute;
+        top: 0;
+        left: 0;
+        transform-origin: top left;
+        overflow: hidden;
+        background-color: #111317;
+        background-image: url('New%20Images/result.png');
+        background-size: cover;
+        background-position: center center;
+        opacity: 0;
+        transition: opacity 0.45s ease;
+      }
+      .canvas.loaded { opacity: 1; }
+      .canvas.leaving { opacity: 0; }
+
+      @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(24px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+
+      .guide-section {
+        display: flex;
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        animation: fadeUp 0.7s ease both;
+      }
+
+      .eyebrow-text {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 500;
+        font-size: 24px;
+        letter-spacing: 0.35em;
+        text-indent: 0.35em;
+        color: rgba(242, 237, 228, 0.75);
+        margin-bottom: 34px;
+      }
+
+      .rank-title {
+        font-family: 'Noto Serif KR', serif;
+        font-weight: 800;
+        font-size: 180px;
+        line-height: 1.2;
+        letter-spacing: 0.05em;
+        background: linear-gradient(90deg, #fbf3e4 10%, #c9a567 90%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        filter: drop-shadow(0 0 30px rgba(226, 194, 136, 0.28));
+        margin-bottom: 40px;
+      }
+
+      .divider {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 40px;
+      }
+      .divider-line { width: 60px; height: 1px; background: rgba(201, 165, 103, 0.4); }
+      .divider-gem { font-size: 10px; color: #d4af37; opacity: 0.75; }
+
+      .subcopy {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 500;
+        font-size: 32px;
+        line-height: 1.7;
+        color: #f0d2a0;
+        margin-bottom: 64px;
+      }
+
+      /* 우측 하단 아이콘 그룹 (다음 순서 + 홈, draw.html의 corner-actions와 동일 패턴) */
+      .corner-actions {
+        position: absolute; bottom: 40px; right: 40px; z-index: 2;
+        display: flex; align-items: center; gap: 16px;
+      }
+      .icon-btn {
+        width: 52px; height: 52px;
+        display: flex; align-items: center; justify-content: center;
+        background: none; padding: 0;
+        border: 1px solid rgba(212, 175, 55, 0.5); border-radius: 50%;
+        color: #d4af37;
+        cursor: pointer; outline: none;
+        transition: all 0.3s;
+      }
+      .icon-btn svg { width: 22px; height: 22px; }
+      .icon-btn:hover { background: #d4af37; color: #0a0b0d; }
+    </style>
+  </head>
+  <body>
+    <div class="canvas" id="canvas">
+
+      <!-- ═══ 2등 안내 ═══ -->
+      <section class="guide-section">
+        <p class="eyebrow-text">NEXT ROUND</p>
+        <h1 class="rank-title">2등</h1>
+        <div class="divider">
+          <span class="divider-line"></span>
+          <span class="divider-gem">◆</span>
+          <span class="divider-line"></span>
+        </div>
+        <p class="subcopy">2명 추첨 · 백화점 상품권 20만원권</p>
+
+        <div class="corner-actions">
+          <a class="icon-btn" href="guide1.html" aria-label="다음 순서 보기">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+          </a>
+          <a class="icon-btn" href="index.html" aria-label="홈으로">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 11.5L12 4l9 7.5" />
+              <path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9" />
+            </svg>
+          </a>
+        </div>
+      </section>
+
+    </div>
+
+    <script>
+      function fitCanvas() {
+        var scale = Math.min(
+          window.innerWidth / 1920,
+          window.innerHeight / 1080,
+        );
+        var offsetX = (window.innerWidth - 1920 * scale) / 2;
+        var offsetY = (window.innerHeight - 1080 * scale) / 2;
+        var canvas = document.getElementById('canvas');
+        canvas.style.transform =
+          'translate(' +
+          offsetX +
+          'px, ' +
+          offsetY +
+          'px) scale(' +
+          scale +
+          ')';
+      }
+      fitCanvas();
+      window.addEventListener('resize', fitCanvas);
+
+      var canvasEl = document.getElementById('canvas');
+      window.addEventListener('load', function () {
+        requestAnimationFrame(function () {
+          canvasEl.classList.add('loaded');
+        });
+      });
+
+      // 다른 페이지로 이동하는 링크는 캔버스 전체를 페이드아웃한 뒤 전환
+      document.querySelectorAll('.corner-actions a[href]').forEach(function (link) {
+        link.addEventListener('click', function (e) {
+          var href = this.getAttribute('href');
+          if (!href) return;
+          e.preventDefault();
+          canvasEl.classList.remove('loaded');
+          canvasEl.classList.add('leaving');
+          setTimeout(function () {
+            window.location.href = href;
+          }, 420);
+        });
+      });
+    </script>
+  </body>
+</html>
