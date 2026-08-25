@@ -16,10 +16,17 @@
       rel="stylesheet"
     />
 
-    <!-- 최신 Chromium(126+)에서 페이지 간 이동 시 브라우저 네이티브 크로스페이드 전환 -->
+    <!-- 최신 Chromium(126+)에서 페이지 간 이동 시 브라우저 네이티브 크로스페이드 전환
+         (뒤로/앞으로가기처럼 JS로 가로챌 수 없는 탐색에서도 걸림) -->
     <style>
       @view-transition {
         navigation: auto;
+      }
+      /* 기본 지속시간(0.25s)이 우리 커스텀 opacity 페이드(0.45s)보다 짧아 방향에 따라
+         속도가 다르게 느껴짐 — 커스텀 페이드와 동일하게 맞춰 체감 속도를 통일 */
+      ::view-transition-old(root),
+      ::view-transition-new(root) {
+        animation-duration: 0.45s;
       }
     </style>
 
@@ -144,11 +151,12 @@
 
       /* 5) 버튼 */
       .enter-btn {
-        display: flex;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
         gap: 26px;
-        width: 392px;
+        min-width: 320px;
+        padding: 0 42px;
         height: 62px;
         border-radius: 999px;
         border: none;
@@ -256,6 +264,19 @@
         requestAnimationFrame(function () {
           canvasEl.classList.add('loaded');
         });
+      });
+
+      // 브라우저 뒤로가기/앞으로가기로 페이지가 bfcache에서 복원될 때는 'load'가 다시 발생하지 않아
+      // 나갈 때 페이드아웃된(opacity:0) 상태 그대로 멈춰 보임 — pageshow로 감지해 다시 보이게 함.
+      // requestAnimationFrame으로 한 프레임 미루는 이유는 최초 로드 때와 동일 — opacity:0 상태가
+      // 먼저 화면에 반영된 뒤에 loaded를 붙여야 전환(트랜지션)이 실제로 애니메이션됨(즉시 붙이면 스냅됨)
+      window.addEventListener('pageshow', function (e) {
+        if (e.persisted) {
+          canvasEl.classList.remove('loaded', 'leaving');
+          requestAnimationFrame(function () {
+            canvasEl.classList.add('loaded');
+          });
+        }
       });
 
       // draw.html로 이동하기 전 페이드아웃 후 전환 (View Transitions 미지원 브라우저 대응)

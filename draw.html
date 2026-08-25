@@ -13,10 +13,17 @@
     <!-- SheetJS: 엑셀 파일 파싱 라이브러리 -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 
-    <!-- 최신 Chromium(126+)에서 페이지 간 이동 시 브라우저 네이티브 크로스페이드 전환 -->
+    <!-- 최신 Chromium(126+)에서 페이지 간 이동 시 브라우저 네이티브 크로스페이드 전환
+         (뒤로/앞으로가기처럼 JS로 가로챌 수 없는 탐색에서도 걸림) -->
     <style>
         @view-transition {
             navigation: auto;
+        }
+        /* 기본 지속시간(0.25s)이 우리 커스텀 opacity 페이드(0.45s)보다 짧아 방향에 따라
+           속도가 다르게 느껴짐 — 커스텀 페이드와 동일하게 맞춰 체감 속도를 통일 */
+        ::view-transition-old(root),
+        ::view-transition-new(root) {
+            animation-duration: 0.45s;
         }
     </style>
 
@@ -65,6 +72,7 @@
             transition: opacity 0.45s ease;
         }
         .canvas.loaded { opacity: 1; }
+        .canvas.leaving { opacity: 0; }
 
         /* 실제 콘텐츠 래퍼 — 캔버스 배경 위에 위치 */
         .app {
@@ -281,14 +289,6 @@
             margin-bottom: 36px;
         }
 
-        /* 헤드라인 + 카운트다운 시작 버튼을 한 줄에 배치 — 버튼을 헤드라인 텍스트의 베이스라인(하단)에 맞춤 */
-        .loading-title-row {
-            display: flex;
-            align-items: baseline;
-            gap: 28px;
-            margin-bottom: 34px;
-        }
-
         .loading-title {
             font-family: 'Noto Serif KR', serif;
             font-weight: 800;
@@ -299,33 +299,39 @@
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
+            margin-bottom: 34px;
         }
 
-        /* 카운트다운 시작 버튼 — 헤드라인 우측에 붙는 작은 버튼 */
+        /* 카운트다운 시작 버튼 — 서브카피 아래에 배치, 추첨 시작하기(.enter-btn)와 동일한 크기 */
         .countdown-btn {
             display: inline-flex;
             align-items: center;
-            gap: 10px;
+            justify-content: center;
+            gap: 26px;
             flex-shrink: 0;
-            padding: 0 22px;
-            height: 42px;
+            margin-top: 8px;
+            min-width: 320px;
+            padding: 0 42px;
+            height: 62px;
             border-radius: 999px;
             border: none;
             background: linear-gradient(180deg, #e8d0a6 0%, #d5b47a 100%);
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+            box-shadow: 0 6px 22px rgba(0, 0, 0, 0.18);
             cursor: pointer;
             transition: transform .25s ease, filter .25s ease;
         }
-        .countdown-btn:hover { transform: translateY(-1px); filter: brightness(1.04); }
-        .countdown-btn.hidden { display: none; }
+        .countdown-btn:hover { transform: translateY(-1.5px); filter: brightness(1.04); }
+        /* display:none 대신 visibility — 버튼이 차지하던 공간을 그대로 남겨둬서
+           아래 숫자(.loading-dynamic)의 위치가 카운트다운 시작 전/후로 흔들리지 않게 함 */
+        .countdown-btn.hidden { visibility: hidden; }
         .countdown-btn-label {
             font-family: 'Pretendard', sans-serif;
             font-weight: 600;
-            font-size: 15px;
+            font-size: 20px;
             color: #3a2c22;
             white-space: nowrap;
         }
-        .countdown-btn svg { width: 16px; height: 16px; color: #3a2c22; flex-shrink: 0; }
+        .countdown-btn svg { width: 24px; height: 24px; color: #3a2c22; flex-shrink: 0; }
 
         .loading-sub {
             font-family: 'Pretendard', sans-serif;
@@ -351,8 +357,9 @@
             width: 100%;
             display: flex;
             justify-content: flex-end;
-            margin-top: -70px;
+            margin-top: -140px;
             padding-right: 100px;
+            pointer-events: none; /* 장식용 숫자가 버튼과 겹쳐도 클릭을 가로채지 않도록 */
         }
 
         /* 카운트다운 숫자 — 버튼을 누르기 전엔 옅은 색(.dim)으로 대기 상태를 보여주다가,
@@ -656,16 +663,14 @@
     <!-- ═══ LOADING SECTION: 추첨 진행 중 화면 (5·4·3·2·1 카운트다운) ═══ -->
     <section class="loading-section" id="loadingSection">
         <p class="loading-label" id="loadingLabel">READY TO DRAW</p>
-        <div class="loading-title-row">
-            <h2 class="loading-title" id="loadingTitle">이제 시작하겠습니다</h2>
-            <button class="countdown-btn" id="countdownBtn" type="button">
-                <span class="countdown-btn-label">카운트다운 시작</span>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M5 12h14M13 6l6 6-6 6" />
-                </svg>
-            </button>
-        </div>
+        <h2 class="loading-title" id="loadingTitle">이제 시작하겠습니다</h2>
         <p class="loading-sub" id="loadingSub">버튼을 누르면 추첨이 시작됩니다</p>
+        <button class="countdown-btn" id="countdownBtn" type="button">
+            <span class="countdown-btn-label">카운트다운 시작</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+        </button>
 
         <div class="loading-dynamic">
             <div class="loading-count dim" id="loadingCount">5</div>
@@ -990,7 +995,7 @@
                 loadingTextEls.forEach(el => el.classList.add('text-swap'));
                 setTimeout(() => {
                     loadingLabel.textContent = 'DRAWING IN PROGRESS';
-                    loadingTitle.textContent = '응모권을 섞고 있습니다';
+                    loadingTitle.textContent = '행운의 주인공은 누구일까요';
                     loadingSub.textContent = `지금, ${participants.length}개의 응모권이 섞이고 있습니다`;
                     loadingTextEls.forEach(el => el.classList.remove('text-swap'));
                 }, TEXT_FADE_MS);
@@ -1148,6 +1153,36 @@
     window.addEventListener('load', function () {
         requestAnimationFrame(function () {
             document.getElementById('canvas').classList.add('loaded');
+        });
+    });
+
+    // 브라우저 뒤로가기/앞으로가기로 페이지가 bfcache에서 복원될 때는 'load'가 다시 발생하지 않아
+    // 캔버스가 보이지 않는 상태로 멈춰 보일 수 있음 — pageshow로 감지해 다시 보이게 함.
+    // requestAnimationFrame으로 한 프레임 미루는 이유는 최초 로드 때와 동일 — opacity:0 상태가
+    // 먼저 화면에 반영된 뒤에 loaded를 붙여야 전환(트랜지션)이 실제로 애니메이션됨(즉시 붙이면 스냅됨)
+    window.addEventListener('pageshow', function (e) {
+        if (e.persisted) {
+            var canvas = document.getElementById('canvas');
+            canvas.classList.remove('loaded', 'leaving');
+            requestAnimationFrame(function () {
+                canvas.classList.add('loaded');
+            });
+        }
+    });
+
+    // 다른 페이지로 이동하는 링크(수기 추첨 안내 / 홈)는 캔버스 전체를 페이드아웃한 뒤 전환
+    // (index.html·guide1.html·guide2.html과 동일한 패턴)
+    document.querySelectorAll('.corner-actions a[href]').forEach(function (link) {
+        link.addEventListener('click', function (e) {
+            var href = this.getAttribute('href');
+            if (!href) return;
+            e.preventDefault();
+            var canvas = document.getElementById('canvas');
+            canvas.classList.remove('loaded');
+            canvas.classList.add('leaving');
+            setTimeout(function () {
+                window.location.href = href;
+            }, 420);
         });
     });
 </script>
